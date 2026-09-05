@@ -208,6 +208,7 @@ function paint() {
 async function refresh() {
   if (WARD === null) return;
   const { data, error } = await sb.rpc("get_counts", { p_ward: WARD, p_token: TOKEN });
+  dbg("get_counts → " + (error ? "ERROR " + JSON.stringify(error) : JSON.stringify(data)));
   if (error || !data) {
     console.error("get_counts failed", error);
     toast("वोटिंग सर्वर से कनेक्शन नहीं हो रहा। थोड़ी देर बाद फिर कोशिश करें।", 5000);
@@ -217,7 +218,8 @@ async function refresh() {
   state.counts = data.counts || {};
   state.total  = data.total || 0;
   state.mine   = data.mine || null;
-  paint();
+  try { paint(); } catch (e) { dbg("paint फेल: " + e.message); throw e; }
+  dbg("दिखाया: total=" + state.total + " phase=" + state.phase + " gate=" + GATE);
   return true;
 }
 
@@ -303,6 +305,9 @@ function wireShare() {
 }
 
 /* ── शुरुआत ─────────────────────────────────────────────────── */
+window.addEventListener("error", e => dbg("JS गड़बड़ी: " + e.message + " @ " + (e.filename||"").split("/").pop() + ":" + e.lineno));
+window.addEventListener("unhandledrejection", e => dbg("promise गड़बड़ी: " + (e.reason && e.reason.message || e.reason)));
+
 async function boot() {
   wireShare();
   $$(".row").forEach(r => r.addEventListener("click", () => {
