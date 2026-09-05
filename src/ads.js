@@ -31,22 +31,9 @@ const SPONSORS = [
    यह सिर्फ़ आख़िरी सहारा है — अगर डेटाबेस जवाब ही न दे। */
 const FALLBACK_IF_DB_DOWN = { top: "house", mid: "house", bottom: "house" };
 
-const ADSTERRA = {
-  // यह domain हर Adsterra खाते का अलग होता है — GET CODE वाले script src से लें
-  host: "https://www.highrevenueformat.com",
-
-  // हर जगह के लिए अलग नाप। 300x250 वाला 320x50 से 2-4 गुना ज़्यादा देता है,
-  // इसलिए बीच और नीचे वहीं रखा है। key ख़ाली हो तो नीचे वाला 320x50 चलेगा।
-  units: {
-    top:    { key: "", w: 320, h: 50  },
-    mid:    { key: "", w: 300, h: 250 },
-    bottom: { key: "", w: 300, h: 250 },
-    after:  { key: "", w: 300, h: 250 },
-    footer: { key: "", w: 300, h: 250 },
-    stick:  { key: "", w: 320, h: 50  },   // नीचे चिपकी पट्टी
-  },
-  banner: { key: "5e99d15e87d709158409d34747ba1b34", w: 320, h: 50 },   // पुराना, सहारे के लिए
-};
+/* किसी नेटवर्क की key कोड में नहीं रखी जाती। हर जगह का विज्ञापन
+   /admin से चिपकाए गए कोड से चलता है — Adcash, AdSense, कोई भी।
+   कोड ख़ाली हो तो कुछ नहीं दिखता। */
 
 /* ─────────────────────────────────────────────────────────── */
 
@@ -148,23 +135,6 @@ function addStickClose(box) {
   box.appendChild(x);
 }
 
-function fillAdsterra(box, cfg) {
-  if (!cfg.key) return box.dataset.ad === "stick" ? null : fillHouse(box);
-  box.classList.add("has-ad");
-  const f = document.createElement("iframe");
-  f.style.cssText = `width:${cfg.w}px;height:${cfg.h}px;border:0;display:block`;
-  f.setAttribute("scrolling", "no");
-  f.loading = "lazy";
-  f.title = "विज्ञापन";
-  box.appendChild(f);
-  if (box.dataset.ad === "stick") addStickClose(box);
-  const d = f.contentDocument;
-  d.open();
-  d.write(`<body style="margin:0">
-<script>atOptions={'key':'${cfg.key}','format':'iframe','height':${cfg.h},'width':${cfg.w},'params':{}};<\/script>
-<script src="${ADSTERRA.host}/${cfg.key}/invoke.js"><\/script></body>`);
-  d.close();
-}
 
 (async () => {
   const [db, cfgRows] = await Promise.all([fromDb(), cfgFromDb(), loadGrand()]);
@@ -190,13 +160,10 @@ function fillAdsterra(box, cfg) {
     const mine = bySlot[slot];
     if (mine && mine.length) return fillSponsor(box, mine);   // दुकान का बैनर सबसे पहले
     const m = mode[slot];
-    if (m === "adsterra") {
-      if (code[slot]) {
-        const h = hgt[slot] || (["mid","bottom","after","footer"].includes(slot) ? 260 : 60);
-        return fillCode(box, code[slot], h);
-      }
-      const u = ADSTERRA.units[slot];
-      return fillAdsterra(box, u && u.key ? u : ADSTERRA.banner);
+    if (m === "adsterra") {                     // = "विज्ञापन दिखाएँ"
+      if (!code[slot]) return;                  // कोड नहीं तो कुछ नहीं
+      const h = hgt[slot] || (["mid","bottom","after","footer"].includes(slot) ? 260 : 60);
+      return fillCode(box, code[slot], h);
     }
     // ऊपर वाली पट्टी यही बात पहले से कह रही है — top पर दोबारा मत दिखाओ
     if (m === "house" && slot !== "top" && slot !== "stick") return fillHouse(box);
