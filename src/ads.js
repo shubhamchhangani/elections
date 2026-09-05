@@ -97,22 +97,32 @@ function fillHouse(box) {
 /* पूरे पेज पर एक बार चलने वाला टैग — जैसे Adcash AutoTag, जो ख़ुद जगह
    ढूँढ़कर विज्ञापन लगाता है। इसे iframe में नहीं डाल सकते, क्योंकि उसे पन्ना
    दिखना चाहिए। इसलिए यह app.js के बाद चलता है — मतदान पहले तैयार हो जाता है। */
-function runGlobal(html) {
+async function runGlobal(html) {
   if (!html || runGlobal._done) return;
   runGlobal._done = true;
   const holder = document.createElement("div");
   holder.innerHTML = html;
+
+  // ⚠️ एक-एक करके डालो और बाहरी script के लोड होने का इंतज़ार करो।
+  // नेटवर्क के टैग में पहला script लाइब्रेरी लाता है और दूसरा उसे बुलाता है।
+  // दोनों एक साथ डालने पर दूसरा पहले चल जाता था और
+  // "aclib.runAutoTag is not a function" आता था — एक भी विज्ञापन नहीं आता था।
   for (const el of [...holder.childNodes]) {
     if (el.nodeType !== 1) continue;
     if (el.tagName !== "SCRIPT") { document.body.appendChild(el); continue; }
     const sc = document.createElement("script");
-    for (const a of el.attributes) sc.setAttribute(a.name, a.value);
-    // ⚠️ JS से डाले गए script अपने आप async हो जाते हैं, यानी बाद वाला पहले
-    // चल सकता है। नेटवर्क के टैग में पहला script लाइब्रेरी लाता है और दूसरा
-    // उसे बुलाता है — इसलिए क्रम बनाए रखना ज़रूरी है।
+    for (const at of el.attributes) sc.setAttribute(at.name, at.value);
     sc.async = false;
-    if (el.src) sc.src = el.src; else sc.text = el.textContent;
-    document.body.appendChild(sc);
+    if (el.src) {
+      const ready = new Promise(res => { sc.onload = res; sc.onerror = res; setTimeout(res, 8000); });
+      sc.src = el.src;
+      document.body.appendChild(sc);
+      await ready;
+      await new Promise(r => setTimeout(r, 250));   // लाइब्रेरी को तैयार होने दो
+    } else {
+      sc.text = el.textContent;
+      document.body.appendChild(sc);
+    }
   }
 }
 
@@ -158,7 +168,7 @@ function addStickClose(box) {
     if (r.height) hgt[r.slot] = r.height;
   }
 
-  if (mode.global !== "off" && code.global) runGlobal(code.global);
+  if (mode.global !== "off" && code.global) runGlobal(code.global);   // जान-बूझकर await नहीं — विज्ञापन पन्ने को रोके नहीं
 
   document.querySelectorAll("[data-ad]").forEach(box => {
     const slot = box.dataset.ad;
