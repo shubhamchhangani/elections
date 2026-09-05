@@ -360,6 +360,14 @@ sb.rpc("log_hit", {
   p_visitor: TOKEN
 }).then(() => {}, () => {});
 
+/* कुल वोट — हर पन्ने पर, क्योंकि होमपेज पर ही सबसे पहले लोग आते हैं */
+sb.rpc("get_totals").then(({ data }) => {
+  const g = data && data.grand;
+  if (!g || g < 100) return;                        // कम संख्या उल्टा असर करती है
+  $$("[data-grand]").forEach(el => animateNum(el, g));
+  $$(".pitch-proof").forEach(el => el.classList.remove("hide"));
+}).catch(() => {});
+
 /* ── शुरुआत ─────────────────────────────────────────────────── */
 window.addEventListener("error", e => dbg("JS गड़बड़ी: " + e.message + " @ " + (e.filename||"").split("/").pop() + ":" + e.lineno));
 window.addEventListener("unhandledrejection", e => dbg("promise गड़बड़ी: " + (e.reason && e.reason.message || e.reason)));
@@ -378,13 +386,6 @@ async function boot() {
 
   dbg("शुरू | ward=" + WARD + " | token=" + TOKEN.slice(0, 8) + "… | turnstile key=" + (TURNSTILE_KEY ? "है" : "नहीं"));
   tsWaitScript().then(ok => { if (ok) tsRender(); });
-
-  sb.rpc("get_totals").then(({ data }) => {
-    const g = data && data.grand;
-    if (!g || g < 100) return;                       // कम संख्या उल्टा असर करती है
-    $$("[data-grand]").forEach(el => animateNum(el, g));
-    $$(".pitch-proof").forEach(el => el.classList.remove("hide"));
-  }).catch(() => {});
 
   await refresh();
   setInterval(() => { if (document.visibilityState === "visible") refresh(); }, POLL_MS);
