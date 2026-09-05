@@ -102,11 +102,16 @@ function runGlobal(html) {
   runGlobal._done = true;
   const holder = document.createElement("div");
   holder.innerHTML = html;
-  for (const el of [...holder.children]) {
+  for (const el of [...holder.childNodes]) {
+    if (el.nodeType !== 1) continue;
     if (el.tagName !== "SCRIPT") { document.body.appendChild(el); continue; }
     const sc = document.createElement("script");
     for (const a of el.attributes) sc.setAttribute(a.name, a.value);
-    sc.text = el.textContent;
+    // ⚠️ JS से डाले गए script अपने आप async हो जाते हैं, यानी बाद वाला पहले
+    // चल सकता है। नेटवर्क के टैग में पहला script लाइब्रेरी लाता है और दूसरा
+    // उसे बुलाता है — इसलिए क्रम बनाए रखना ज़रूरी है।
+    sc.async = false;
+    if (el.src) sc.src = el.src; else sc.text = el.textContent;
     document.body.appendChild(sc);
   }
 }
