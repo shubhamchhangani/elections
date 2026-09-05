@@ -16,9 +16,14 @@
    ⚠️ किसी प्रत्याशी या राजनीतिक दल का बैनर यहाँ कभी न डालें —
       चुनाव आयोग के नियम से उसके लिए MCMC का पूर्व-प्रमाणन ज़रूरी है। */
 const SPONSORS = [
-  // { slot:"top",    img:"/img/sponsors/dukan1.png", href:"https://wa.me/91XXXXXXXXXX", alt:"दुकान का नाम" },
-  // { slot:"mid",    img:"/img/sponsors/dukan2.png", href:"tel:+91XXXXXXXXXX",          alt:"दूसरी दुकान" },
-  // { slot:"bottom", img:"/img/sponsors/dukan3.png", href:"https://...",                alt:"तीसरी दुकान" },
+  { slot: "mid",
+    img:  "/img/sponsors/iphone-wala.png",
+    href: "tel:+919785978898",
+    alt:  "iPhone Wala, बैंक ऑफ़ बड़ौदा के सामने पोकरण — प्रशांत व्यास 9785978898, नवनीत व्यास 9024489425" },
+
+  // नया प्रायोजक: बैनर scripts/sponsor.js में बनाएँ (npm run sponsor), फिर यहाँ एक लाइन
+  // { slot:"top",    img:"/img/sponsors/dukan.png", href:"tel:+91XXXXXXXXXX", alt:"दुकान का नाम" },
+  // { slot:"bottom", img:"/img/sponsors/dukan2.png", href:"https://wa.me/91XXXXXXXXXX", alt:"दूसरी दुकान" },
 ];
 
 /* ── 2. Adsterra — ख़ाली जगहें भरने के लिए ──
