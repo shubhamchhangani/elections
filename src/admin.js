@@ -5,7 +5,8 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 const $  = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 
-const SLOTS = { top: "सबसे ऊपर", mid: "बीच में", bottom: "सबसे नीचे", stick: "नीचे चिपकी पट्टी" };
+const SLOTS = { global: "पूरे पेज पर (AutoTag)", top: "सबसे ऊपर", mid: "बीच में",
+                bottom: "सबसे नीचे", stick: "नीचे चिपकी पट्टी" };
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
 
 function say(msg, bad) {
@@ -201,7 +202,7 @@ async function loadCfg() {
   const box = $("#cfg");
   if (error) { box.innerHTML = `<p class="empty">नियंत्रण नहीं आया: ${esc(error.message)}</p>`; return; }
   const by = Object.fromEntries(data.map(r => [r.slot, r]));
-  box.innerHTML = ["top", "mid", "bottom", "stick"].map(slot => {
+  box.innerHTML = ["global", "top", "mid", "bottom", "stick"].map(slot => {
     const r = by[slot] || {};
     return `
     <div class="cfg-box">
@@ -212,6 +213,7 @@ async function loadCfg() {
             `<option value="${v}"${r.fallback === v ? " selected" : ""}>${t}</option>`).join("")}
         </select>
       </div>
+      ${slot === "global" ? '<p class="hint">यह टैग पूरे पन्ने पर एक बार चलता है और ख़ुद जगह ढूँढ़ लेता है। Adcash का AutoTag यहीं डालें।</p>' : ""}
       <details${r.code ? " open" : ""}>
         <summary>विज्ञापन का कोड ${r.code ? "· लगा हुआ है" : "· खाली"}</summary>
         <textarea data-code="${slot}" rows="4"
@@ -239,7 +241,7 @@ async function loadCfg() {
 
 $("#allOff").addEventListener("click", async () => {
   if (!confirm("तीनों जगह से सारे विज्ञापन हट जाएँगे (दुकानों के बैनर फिर भी दिखेंगे)। पक्का?")) return;
-  const { error } = await sb.from("ad_config").update({ fallback: "off" }).in("slot", ["top","mid","bottom","stick"]);
+  const { error } = await sb.from("ad_config").update({ fallback: "off" }).in("slot", ["global","top","mid","bottom","stick"]);
   if (error) return say(error.message, true);
   say("सारे विज्ञापन बंद"); loadCfg();
 });

@@ -3,17 +3,15 @@
 
 alter table public.ad_config add column if not exists code text;
 
---  code खाली हो तो कोड में लिखा Adsterra चलेगा।
---  code में नेटवर्क का पूरा टैग चिपका दें (Adcash, Adsterra, कोई भी) —
---  वह एक अलग iframe में चलेगा, इसलिए साइट को छू नहीं सकता।
-
 comment on column public.ad_config.code is
   'विज्ञापन नेटवर्क का पूरा HTML/JS टैग। खाली = कोड वाला डिफ़ॉल्ट।';
 
--- 'stick' (नीचे चिपकी पट्टी) भी एक जगह है
+-- नई जगहें: नीचे चिपकी पट्टी, और 'global' — पूरे पेज पर एक बार चलने वाला
+-- टैग (जैसे Adcash AutoTag, जो ख़ुद जगह ढूँढ़कर विज्ञापन लगाता है)।
 alter table public.ad_config drop constraint if exists ad_config_slot_check;
 alter table public.ad_config add constraint ad_config_slot_check
-  check (slot in ('top','mid','bottom','stick'));
+  check (slot in ('global','top','mid','bottom','stick'));
 
-insert into public.ad_config (slot, fallback) values ('stick', 'adsterra')
+insert into public.ad_config (slot, fallback) values
+  ('stick', 'adsterra'), ('global', 'adsterra')
 on conflict (slot) do nothing;

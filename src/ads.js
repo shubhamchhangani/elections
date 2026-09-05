@@ -105,6 +105,23 @@ function fillHouse(box) {
 }
 
 
+/* पूरे पेज पर एक बार चलने वाला टैग — जैसे Adcash AutoTag, जो ख़ुद जगह
+   ढूँढ़कर विज्ञापन लगाता है। इसे iframe में नहीं डाल सकते, क्योंकि उसे पन्ना
+   दिखना चाहिए। इसलिए यह app.js के बाद चलता है — मतदान पहले तैयार हो जाता है। */
+function runGlobal(html) {
+  if (!html || runGlobal._done) return;
+  runGlobal._done = true;
+  const holder = document.createElement("div");
+  holder.innerHTML = html;
+  for (const el of [...holder.children]) {
+    if (el.tagName !== "SCRIPT") { document.body.appendChild(el); continue; }
+    const sc = document.createElement("script");
+    for (const a of el.attributes) sc.setAttribute(a.name, a.value);
+    sc.text = el.textContent;
+    document.body.appendChild(sc);
+  }
+}
+
 /* नेटवर्क का अपना टैग — अलग iframe में, ताकि साइट को छू न सके */
 function fillCode(box, code, h) {
   box.classList.add("has-ad");
@@ -159,6 +176,8 @@ function fillAdsterra(box, cfg) {
 
   const mode = { ...FALLBACK_IF_DB_DOWN }, code = {};
   for (const r of (cfgRows || [])) { mode[r.slot] = r.fallback; if (r.code) code[r.slot] = r.code; }
+
+  if (mode.global !== "off" && code.global) runGlobal(code.global);
 
   document.querySelectorAll("[data-ad]").forEach(box => {
     const slot = box.dataset.ad;
