@@ -56,27 +56,74 @@ async function deviceId() {
 }
 
 /* ── परत 1: Turnstile — अदृश्य कैप्चा ───────────────────────── */
-let _tsId = null;
-function captcha() {
-  if (!TURNSTILE_KEY || !window.turnstile) return Promise.resolve("");
+/* widget एक बार बनता है और पेज खुलते ही token तैयार कर लेता है, ताकि
+   वोट के वक़्त इंतज़ार न करना पड़े। हर वोट के बाद reset करके नया token।
+   ⚠️ size:"invisible" जैसी कोई value नहीं होती (सिर्फ़ normal/flexible/compact) —
+   अदृश्य रहना Turnstile डैशबोर्ड की Widget Mode सेटिंग से तय होता है। */
+let _tsId = null, _tsToken = "", _tsWaiters = [];
+
+function tsResolve(t) { _tsWaiters.splice(0).forEach(f => f(t || "")); }
+
+function tsRender() {
+  if (_tsId !== null || !TURNSTILE_KEY || !window.turnstile) return;
+  const box = document.createElement("div");
+  box.className = "cf-turnstile-box";
+  document.body.appendChild(box);
+  try {
+    _tsId = window.turnstile.render(box, {
+      sitekey: TURNSTILE_KEY,
+      appearance: "interaction-only",
+      retry: "auto",
+      "refresh-expired": "auto",
+      callback: t => { _tsToken = t || ""; dbg("turnstile: token मिला"); tsResolve(_tsToken); },
+      "error-callback": e => { _tsToken = ""; dbg("turnstile error: " + e); tsResolve(""); },
+      "expired-callback": () => { _tsToken = ""; dbg("turnstile: token expire"); },
+      "timeout-callback": () => { _tsToken = ""; dbg("turnstile: timeout"); tsResolve(""); }
+    });
+    dbg("turnstile: widget बना");
+  } catch (e) { dbg("turnstile render फेल: " + e.message); tsResolve(""); }
+}
+
+function tsWaitScript() {
   return new Promise(res => {
-    const done = t => res(t || "");
-    if (_tsId === null) {
-      const box = document.createElement("div");
-      box.style.cssText = "position:fixed;left:-9999px;top:0";
-      document.body.appendChild(box);
-      _tsId = window.turnstile.render(box, {
-        sitekey: TURNSTILE_KEY, size: "invisible",
-        callback: done, "error-callback": () => res(""), "timeout-callback": () => res("")
-      });
-      captcha._cb = done;
-    } else {
-      captcha._cb = done;
-      window.turnstile.reset(_tsId);
-    }
-    try { window.turnstile.execute(_tsId); } catch { res(""); }
-    setTimeout(() => res(""), 8000);
+    if (window.turnstile) return res(true);
+    const t0 = Date.now();
+    (function wait() {
+      if (window.turnstile) return res(true);
+      if (Date.now() - t0 > 10000) { dbg("turnstile script लोड नहीं हुआ"); return res(false); }
+      setTimeout(wait, 100);
+    })();
   });
+}
+
+async function captcha() {
+  if (!TURNSTILE_KEY) return "";
+  if (_tsToken) { const t = _tsToken; _tsToken = ""; return t; }        // तैयार token
+  if (!(await tsWaitScript())) return "";
+  if (_tsId === null) tsRender();
+  else { try { window.turnstile.reset(_tsId); } catch (e) { dbg("reset फेल: " + e.message); } }
+  return new Promise(res => {
+    let done = false;
+    const finish = t => { if (!done) { done = true; res(t || ""); } };
+    _tsWaiters.push(finish);
+    setTimeout(() => { if (!done) dbg("turnstile: 12s में जवाब नहीं"); finish(""); }, 12000);
+  });
+}
+
+/* ── जाँच के लिए: URL में ?debug=1 लगाएँ ────────────────────── */
+const DEBUG = new URLSearchParams(location.search).has("debug");
+function dbg(msg) {
+  if (!DEBUG) return;
+  let b = document.getElementById("dbg");
+  if (!b) {
+    b = document.createElement("pre");
+    b.id = "dbg";
+    b.style.cssText = "position:fixed;left:0;right:0;bottom:0;max-height:45vh;overflow:auto;margin:0;"
+      + "background:#000;color:#0f0;font:11px/1.5 monospace;padding:8px;z-index:99999;white-space:pre-wrap";
+    document.body.appendChild(b);
+  }
+  b.textContent += new Date().toLocaleTimeString() + "  " + msg + "\n";
+  b.scrollTop = b.scrollHeight;
 }
 
 /* ── छोटे सहायक ─────────────────────────────────────────────── */
@@ -161,12 +208,17 @@ function paint() {
 async function refresh() {
   if (WARD === null) return;
   const { data, error } = await sb.rpc("get_counts", { p_ward: WARD, p_token: TOKEN });
-  if (error || !data) return;
+  if (error || !data) {
+    console.error("get_counts failed", error);
+    toast("वोटिंग सर्वर से कनेक्शन नहीं हो रहा। थोड़ी देर बाद फिर कोशिश करें।", 5000);
+    return false;
+  }
   state.phase  = data.phase;
   state.counts = data.counts || {};
   state.total  = data.total || 0;
   state.mine   = data.mine || null;
   paint();
+  return true;
 }
 
 /* ── मत डालना ───────────────────────────────────────────────── */
@@ -177,6 +229,10 @@ const MSG = {
   rate:         "अभी बहुत ट्रैफ़िक है। एक मिनट बाद कोशिश करें।",
   captcha_fail: "जाँच पूरी नहीं हुई। पेज दोबारा खोलकर कोशिश करें।",
   no_captcha:   "जाँच पूरी नहीं हुई। पेज दोबारा खोलकर कोशिश करें।",
+  captcha_error: "Cloudflare जाँच में गड़बड़ी है। थोड़ी देर बाद कोशिश करें।",
+  db:           "वोटिंग database से जवाब नहीं मिला। व्यवस्थापक को बताएं।",
+  http_401:     "Supabase की public key गलत या पुरानी है। व्यवस्थापक को बताएं।",
+  http_404:     "Voting function deploy नहीं है या उसका नाम गलत है।",
   bad_ward:     "गड़बड़ी हुई। पेज दोबारा खोलें।"
 };
 
@@ -187,14 +243,20 @@ async function vote(choice, row) {
 
   let out;
   try {
+    dbg("वोट शुरू: ward=" + WARD + " choice=" + choice);
     const [device, ts] = await Promise.all([deviceId(), captcha()]);
+    dbg("captcha token: " + (ts ? ts.slice(0, 14) + "… (" + ts.length + " अक्षर)" : "खाली!"));
     const r = await fetch(VOTE_URL, {
       method: "POST",
       headers: { "content-type": "application/json", apikey: SUPABASE_ANON,
                  authorization: "Bearer " + SUPABASE_ANON },
       body: JSON.stringify({ ward: WARD, choice, token: TOKEN, device, ts })
     });
-    out = await r.json();
+    const raw = await r.text();
+    try { out = JSON.parse(raw); }
+    catch { out = { ok: false, code: `http_${r.status}` }; }
+    if (!r.ok) out = { ok: false, code: out.code || `http_${r.status}` };
+    dbg("सर्वर: HTTP " + r.status + " → " + raw.slice(0, 160));
   } catch {
     state.busy = false;
     if (row) row.classList.remove("chosen", "flash");
@@ -206,6 +268,7 @@ async function vote(choice, row) {
 
   if (out.ok) {
     state.mine = choice;
+    paint();
     track("vote_cast", { ward: WARD, choice, dal: row ? row.dataset.dal : undefined });
     toast("आपका वोट दर्ज हो गया ✓");
   } else {
@@ -251,6 +314,9 @@ async function boot() {
     }
     vote(r.dataset.choice, r);
   }));
+
+  dbg("शुरू | ward=" + WARD + " | token=" + TOKEN.slice(0, 8) + "… | turnstile key=" + (TURNSTILE_KEY ? "है" : "नहीं"));
+  tsWaitScript().then(ok => { if (ok) tsRender(); });
 
   await refresh();
   setInterval(() => { if (document.visibilityState === "visible") refresh(); }, POLL_MS);

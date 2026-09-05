@@ -69,6 +69,21 @@
 > `SUPABASE_URL` और `SUPABASE_SERVICE_ROLE_KEY` अपने आप उपलब्ध रहते हैं — उन्हें जोड़ने की ज़रूरत नहीं।
 > अगर `TURNSTILE_SECRET` नहीं डाला तो साइट चलेगी, पर कैप्चा वाली परत बंद रहेगी।
 
+### वोट न जुड़ने पर तुरंत जाँच
+
+- Supabase के **Project Settings → API** से वर्तमान `anon` या `publishable` public
+   key लेकर `src/config.js` में डालें। पुरानी JWT key पर gateway
+   `UNAUTHORIZED_LEGACY_JWT` या `INVALID_API_KEY` दे सकता है।
+- Function का नाम और `src/config.js` की `VOTE_FN` value बिल्कुल समान होनी चाहिए।
+   इस repository में source path `supabase/functions/vote/index.ts` है; अगर CLI से
+   deploy करते हैं तो `vote` नाम से deploy करें और `VOTE_FN` को `vote` करें। अगर
+   dashboard में `smart-processor` नाम रखा है, तो उसी नाम पर पूरा source deploy करें।
+- Browser console में `get_counts failed` दिखे तो public key/RPC समस्या है।
+   `http_401` public key की समस्या, `http_404` function name/deployment की समस्या,
+   और `captcha_fail` या `no_captcha` Turnstile domain/secret की समस्या है।
+- Key या function बदलने के बाद `npm run build` करके नया `dist` Cloudflare Pages पर
+   deploy करें। पुराने tab को hard refresh करें।
+
 ---
 
 ## 4️⃣ चाबियाँ कोड में (~1 मिनट)

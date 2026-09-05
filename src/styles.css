@@ -279,6 +279,10 @@ footer a{color:var(--evm-dark)}
 }
 .toast.on{transform:translate(-50%,0)}
 
+/* Turnstile का डिब्बा — अदृश्य mode में यह कुछ नहीं दिखाता,
+   पर इसे -9999px पर मत भेजना, Cloudflare छिपे container में चलने से मना कर सकता है */
+.cf-turnstile-box{position:fixed;bottom:0;left:0;width:1px;height:1px;overflow:hidden;opacity:.01;pointer-events:none}
+
 .hide{display:none !important}
 .spin{
   width:18px;height:18px;border:2.5px solid rgba(255,255,255,.35);
