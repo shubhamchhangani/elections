@@ -135,12 +135,8 @@ a{color:var(--evm)}
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:2px;padding:6px 3px;position:relative;background:rgba(255,255,255,.5);
 }
-.chinh img{width:38px;height:38px;object-fit:contain}
-.chinh .fallback{
-  width:38px;height:38px;display:flex;align-items:center;justify-content:center;
-  border:1px solid var(--rule-soft);font-size:11px;line-height:1.1;
-  text-align:center;color:var(--ink-soft);padding:2px;
-}
+.chinh .sym{width:38px;height:38px;display:block}
+.chinh .sym svg{width:100%;height:100%;display:block}
 .chinh small{font-size:10.5px;color:var(--ink-soft);line-height:1.15;text-align:center}
 
 /* EVM का बटन + बत्ती */
@@ -188,8 +184,9 @@ a{color:var(--evm)}
 }
 .leader .cap span:last-child{font-weight:400;color:#C9C3B8}
 .leader .body{padding:15px 14px;display:flex;align-items:center;gap:13px}
-.leader .body img,.leader .body .fallback{width:56px;height:56px;flex:none;object-fit:contain}
-.leader .body .fallback{border:1px solid var(--rule-soft);display:flex;align-items:center;justify-content:center;font-size:11px;text-align:center;color:var(--ink-soft)}
+.leader .body .art{width:58px;height:58px;flex:none}
+.leader .body .sym{width:58px;height:58px;display:block}
+.leader .body .sym svg{width:100%;height:100%;display:block}
 .leader .naam{font-family:"Martel",Georgia,serif;font-weight:800;font-size:27px;line-height:1.15;margin:0}
 .leader .meta{font-size:14.5px;font-weight:600;margin:3px 0 0}
 .leader .big{

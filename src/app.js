@@ -80,8 +80,7 @@ function captcha() {
 }
 
 /* ── छोटे सहायक ─────────────────────────────────────────────── */
-const DEVN = ["०","१","२","३","४","५","६","७","८","९"];
-const dev = n => String(n).replace(/\d/g, d => DEVN[+d]);
+const dev = n => String(n);
 function toast(msg, ms = 3200) {
   let t = $(".toast");
   if (!t) { t = document.createElement("div"); t.className = "toast"; document.body.appendChild(t); }
@@ -141,10 +140,9 @@ function paint() {
       const best = rows.map(r => ({ r, n: state.counts[r.dataset.choice] || 0 }))
                        .sort((a, b) => b.n - a.n)[0];
       if (best && best.n > 0) {
-        const src = $(".chinh img", best.r), fb = $(".chinh .fallback", best.r);
+        const sym = $(".chinh .sym", best.r);
         const box = $(".body .art", lead);
-        if (box) box.innerHTML = src ? `<img src="${src.getAttribute("src")}" alt="">`
-                                     : `<div class="fallback">${fb ? fb.textContent : ""}</div>`;
+        if (box) box.innerHTML = sym ? `<span class="sym">${sym.innerHTML}</span>` : "";
         $(".leader .naam").textContent = $(".who .naam", best.r).textContent;
         const dalEl = $(".who .dal", best.r);
         $(".leader .meta").textContent = dalEl.textContent;
@@ -172,7 +170,7 @@ async function refresh() {
 const MSG = {
   closed:       "मतदान बंद हो चुका है।",
   already:      "इस वार्ड में आपका वोट पहले ही दर्ज है।",
-  device_limit: "इस फ़ोन से इस वार्ड के ३ वोट पहले ही दर्ज हैं।",
+  device_limit: "इस फ़ोन से इस वार्ड के 3 वोट पहले ही दर्ज हैं।",
   rate:         "अभी बहुत ट्रैफ़िक है। एक मिनट बाद कोशिश करें।",
   captcha_fail: "जाँच पूरी नहीं हुई। पेज दोबारा खोलकर कोशिश करें।",
   no_captcha:   "जाँच पूरी नहीं हुई। पेज दोबारा खोलकर कोशिश करें।",
@@ -234,7 +232,7 @@ async function boot() {
   $$(".row").forEach(r => r.addEventListener("click", () => {
     if (r.dataset.locked || state.phase !== "live") {
       if (state.mine) toast("इस वार्ड में आपका वोट पहले ही दर्ज है।");
-      else if (state.phase === "frozen") toast("मतदान बंद है। नतीजे ९ सितम्बर शाम ६ बजे।");
+      else if (state.phase === "frozen") toast("मतदान बंद है। नतीजे 9 सितम्बर शाम 6 बजे।");
       else if (state.phase === "result") toast("मतदान समाप्त हो चुका है।");
       return;
     }

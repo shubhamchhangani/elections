@@ -1,14 +1,14 @@
 import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SITE, WA } from "../src/config.js";   // एक ही जगह से — दोबारा कभी बेमेल न हो
+import { SITE, WA } from "../src/config.js";
+import { symbolSvg } from "../src/symbols.js";   // एक ही जगह से — दोबारा कभी बेमेल न हो
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT  = join(ROOT, "dist");
 const D    = JSON.parse(readFileSync(join(ROOT, "data/candidates.json"), "utf8"));
 
-const DEVN = ["०","१","२","३","४","५","६","७","८","९"];
-const dev  = n => String(n).replace(/\d/g, d => DEVN[+d]);
+const dev = n => String(n);   // अंक अंग्रेज़ी में — 1 2 3, देवनागरी में नहीं
 const esc  = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 
 /* ── साँचा ───────────────────────────────────────────────────── */
@@ -43,13 +43,13 @@ ${schema}
 
 <header class="masthead">
   <div class="wrap">
-    <b><a href="/">पोकरण नगर पालिका<br>चुनाव २०२६</a></b>
+    <b><a href="/">पोकरण नगर पालिका<br>चुनाव 2026</a></b>
     <small>जनता की राय</small>
   </div>
 </header>
 
-<div class="status live hide" data-phase="live"><span class="dot"></span> मतदान चालू · ७ सितम्बर शाम ६ बजे तक</div>
-<div class="status frozen hide" data-phase="frozen">मतदान बंद · नतीजे ९ सितम्बर शाम ६ बजे</div>
+<div class="status live hide" data-phase="live"><span class="dot"></span> मतदान चालू · 7 सितम्बर शाम 6 बजे तक</div>
+<div class="status frozen hide" data-phase="frozen">मतदान बंद · नतीजे 9 सितम्बर शाम 6 बजे</div>
 <div class="status result hide" data-phase="result">अंतिम नतीजे · मतदान समाप्त</div>
 
 <main class="wrap">
@@ -61,7 +61,7 @@ ${body}
     <div class="disc">
       <b>यह एक जनमत सर्वेक्षण है।</b> यह चुनाव आयोग या किसी सरकारी संस्था से सम्बंधित नहीं है।
       यहाँ दिखने वाले आँकड़े इस वेबसाइट पर वोट देने वालों के हैं — ये असली चुनाव परिणाम नहीं हैं।
-      प्रत्याशियों की सूची रिटर्निंग अधिकारी द्वारा जारी प्ररूप-6 (दिनांक ०४.०९.२०२६) से ली गई है।
+      प्रत्याशियों की सूची रिटर्निंग अधिकारी द्वारा जारी प्ररूप-6 (दिनांक 04.09.2026) से ली गई है।
       <br><br>
       <b>एक फ़ोन से एक ही वोट।</b> दोबारा वोट डालने की कोशिश रोकने के लिए हर उपकरण की पहचान
       दर्ज होती है, और स्वचालित मतदान (बॉट) रोकने के लिए जाँच लगी है। फिर भी यह एक खुला
@@ -75,7 +75,7 @@ ${body}
     <p>अपनी दुकान या व्यवसाय का विज्ञापन यहाँ लगवाएँ — बैनर, वीडियो या स्लाइडर।
        <a href="https://wa.me/${WA}?text=${encodeURIComponent("पोकरण चुनाव वेबसाइट पर विज्ञापन के बारे में जानकारी चाहिए")}">WhatsApp पर संपर्क करें</a></p>
     <p><a href="/">सभी वार्ड</a> · <a href="/adhyaksh">अध्यक्ष</a> · <a href="/adhyaksh-kaise-chunte-hain">अध्यक्ष कैसे चुना जाता है?</a> · <a href="/gopniyata-niti">गोपनीयता नीति</a></p>
-    <p style="font-size:12.5px">मतदान ०९ सितम्बर २०२६ · मतगणना १४ सितम्बर २०२६</p>
+    <p style="font-size:12.5px">मतदान 09 सितम्बर 2026 · मतगणना 14 सितम्बर 2026</p>
   </div>
 </footer>
 
@@ -87,8 +87,7 @@ ${body}
 
 /* ── मतपत्र की पंक्तियाँ ─────────────────────────────────────── */
 const symImg = (slug, naam) =>
-  `<img src="/img/symbols/${slug}.png" alt="${esc(naam)}" loading="lazy"
-        onerror="this.outerHTML='<div class=&quot;fallback&quot;>${esc(naam)}</div>'">`;
+  `<span class="sym" role="img" aria-label="${esc(naam)}">${symbolSvg(slug)}</span>`;
 
 const row = ({ choice, dal, naam, dalNaam, chinhSlug, chinhNaam, serial }) => `
     <button class="row" data-choice="${choice}" data-dal="${dal}" type="button">
@@ -102,7 +101,7 @@ const row = ({ choice, dal, naam, dalNaam, chinhSlug, chinhNaam, serial }) => `
 
 const ballot = (label, rows) => `
   <div class="ballot">
-    <div class="ballot-head"><span>${label}</span><span><span data-total>०</span> वोट</span></div>
+    <div class="ballot-head"><span>${label}</span><span><span data-total>0</span> वोट</span></div>
 ${rows}
   </div>`;
 
@@ -113,12 +112,12 @@ const leader = `
       <div><p class="naam"></p><p class="meta"></p></div>
       <div class="big"></div>
     </div>
-    <div class="foot"><span><b data-total>०</b> लोगों की राय</span><span>${SITE.replace(/^https?:\/\//,"")}</span></div>
+    <div class="foot"><span><b data-total>0</b> लोगों की राय</span><span>${SITE.replace(/^https?:\/\//,"")}</span></div>
   </div>`;
 
 const gate = `
   <div class="gate hide">
-    <p class="count">०</p>
+    <p class="count">0</p>
     <p></p>
     <div class="track"><i style="width:0"></i></div>
   </div>`;
@@ -160,7 +159,7 @@ const P = D.parties;
     body: `
   <div class="head">
     <h1>आपके वार्ड में कौन जीत रहा है?</h1>
-    <p class="kshetra">पोकरण नगर पालिका के सभी २५ वार्ड · ७४ प्रत्याशी · अपना वार्ड चुनें</p>
+    <p class="kshetra">पोकरण नगर पालिका के सभी 25 वार्ड · 74 प्रत्याशी · अपना वार्ड चुनें</p>
   </div>
 
   <div class="grid">
@@ -171,25 +170,25 @@ const P = D.parties;
 
   <div class="sec">
     <h2>अध्यक्ष किस पार्टी का बनेगा?</h2>
-    <p>२५ वार्डों में से जिस दल के सबसे ज़्यादा पार्षद जीतेंगे, अध्यक्ष उसी का बनेगा। आपकी क्या राय है?</p>
+    <p>25 वार्डों में से जिस दल के सबसे ज़्यादा पार्षद जीतेंगे, अध्यक्ष उसी का बनेगा। आपकी क्या राय है?</p>
     <a class="btn" href="/adhyaksh">अध्यक्ष वाले सवाल पर वोट दें</a>
   </div>
 
   <div class="sec">
     <h2>चुनाव की तारीख़ें</h2>
     <ul>
-      <li><b>०९ सितम्बर २०२६</b> — मतदान, सुबह ७ से शाम ६ बजे तक</li>
-      <li><b>१४ सितम्बर २०२६</b> — मतगणना</li>
-      <li><b>२१ सितम्बर २०२६</b> — अध्यक्ष का चुनाव (जीते हुए पार्षदों द्वारा)</li>
+      <li><b>09 सितम्बर 2026</b> — मतदान, सुबह 7 से शाम 6 बजे तक</li>
+      <li><b>14 सितम्बर 2026</b> — मतगणना</li>
+      <li><b>21 सितम्बर 2026</b> — अध्यक्ष का चुनाव (जीते हुए पार्षदों द्वारा)</li>
     </ul>
     <p><a href="/adhyaksh-kaise-chunte-hain">अध्यक्ष कैसे चुना जाता है? पूरी जानकारी पढ़ें →</a></p>
   </div>
 
   <div class="sec">
     <h2>इस बार की एक ख़ास बात</h2>
-    <p>भारतीय जनता पार्टी ने सभी २५ वार्डों में प्रत्याशी उतारे हैं, जबकि कांग्रेस ने २१ में।
+    <p>भारतीय जनता पार्टी ने सभी 25 वार्डों में प्रत्याशी उतारे हैं, जबकि कांग्रेस ने 21 में।
        <b>वार्ड ${noINC.map(dev).join(", ")} में कांग्रेस का कोई प्रत्याशी नहीं है</b> — इन वार्डों में मुक़ाबला भाजपा और निर्दलीयों के बीच है।
-       कुल ७४ प्रत्याशियों में २८ निर्दलीय हैं।</p>
+       कुल 74 प्रत्याशियों में 28 निर्दलीय हैं।</p>
   </div>
 
   ${shareBtns}
@@ -225,7 +224,7 @@ for (const w of D.wards) {
     <h1>वार्ड ${dev(w.ward)}</h1>
     <p class="kshetra">${esc(w.kshetra)}</p>
     <p class="sub" data-phase="live">अपने प्रत्याशी पर टैप करें। कोई लॉगिन नहीं — बस एक टैप।</p>
-    <p class="sub hide" data-phase="frozen">मतदान बंद है। नतीजे ९ सितम्बर शाम ६ बजे खुलेंगे।</p>
+    <p class="sub hide" data-phase="frozen">मतदान बंद है। नतीजे 9 सितम्बर शाम 6 बजे खुलेंगे।</p>
     <p class="sub hide" data-phase="result">यह जनता की राय का अंतिम नतीजा है।</p>
   </div>
 
@@ -241,7 +240,7 @@ for (const w of D.wards) {
     <ul>
       ${w.pratyashi.map(p => `<li><b>${esc(p.naam)}</b> — ${esc(P[p.dal].naam)}, चिन्ह: ${esc(D.symbols[p.chinh])}<br><span style="color:#5A5148;font-size:14px">${esc(p.pata)}</span></li>`).join("\n      ")}
     </ul>
-    <p style="font-size:13.5px;color:#5A5148">स्रोत: प्ररूप-6, रिटर्निंग अधिकारी (उपखण्ड अधिकारी) नगर पालिका पोकरण, दिनांक ०४.०९.२०२६</p>
+    <p style="font-size:13.5px;color:#5A5148">स्रोत: प्ररूप-6, रिटर्निंग अधिकारी (उपखण्ड अधिकारी) नगर पालिका पोकरण, दिनांक 04.09.2026</p>
   </div>
 
   <div class="sec">
@@ -266,7 +265,7 @@ for (const w of D.wards) {
       <span class="fill"></span>
       <span class="serial">${dev(i + 1)}</span>
       <span class="who"><span class="naam">${esc(o.naam)}</span><span class="dal">${o.c==="ind"?"किसी दल से नहीं":"राष्ट्रीय दल"}</span></span>
-      <span class="chinh">${o.chinh ? symImg(o.chinh, o.cn) : `<div class="fallback">निर्दलीय</div>`}<small>${esc(o.cn)}</small></span>
+      <span class="chinh">${o.chinh ? symImg(o.chinh, o.cn) : `<span class="sym"><svg viewBox="0 0 64 64" fill="none" stroke="#111" stroke-width="3.2" stroke-linecap="round"><circle cx="32" cy="32" r="20"/><path d="M26 26a6 6 0 0111 3c0 4-5 4-5 8"/><circle cx="32" cy="45" r="2" fill="#111"/></svg></span>`}<small>${esc(o.cn)}</small></span>
       <span class="btn-cell"><i class="lamp"></i><i class="evm-btn"></i></span>
       <span class="pct hide"><b>—</b><small></small></span>
     </button>`).join("\n");
@@ -282,22 +281,22 @@ for (const w of D.wards) {
     body: `
   <div class="head">
     <h1>अध्यक्ष किस पार्टी का बनेगा?</h1>
-    <p class="kshetra">२५ वार्डों में जिस दल के सबसे ज़्यादा पार्षद जीतेंगे, अध्यक्ष उसी दल का बनेगा।</p>
+    <p class="kshetra">25 वार्डों में जिस दल के सबसे ज़्यादा पार्षद जीतेंगे, अध्यक्ष उसी दल का बनेगा।</p>
     <p class="sub" data-phase="live">अपनी राय पर टैप करें। कोई लॉगिन नहीं — बस एक टैप।</p>
-    <p class="sub hide" data-phase="frozen">मतदान बंद है। नतीजे ९ सितम्बर शाम ६ बजे खुलेंगे।</p>
+    <p class="sub hide" data-phase="frozen">मतदान बंद है। नतीजे 9 सितम्बर शाम 6 बजे खुलेंगे।</p>
     <p class="sub hide" data-phase="result">यह जनता की राय का अंतिम नतीजा है।</p>
   </div>
 
   ${leader}
   ${gate}
-  ${ballot("पूरी नगर पालिका · ३ विकल्प", rows)}
+  ${ballot("पूरी नगर पालिका · 3 विकल्प", rows)}
 
   ${shareBtns}
   ${adSlot}
 
   <div class="note">
-    <b>ध्यान दें:</b> अध्यक्ष का चुनाव जनता सीधे नहीं करती। ०९ सितम्बर को आप सिर्फ़ अपना वार्ड पार्षद चुनते हैं।
-    अध्यक्ष को <b>२१ सितम्बर</b> को जीते हुए पार्षद मिलकर चुनते हैं।
+    <b>ध्यान दें:</b> अध्यक्ष का चुनाव जनता सीधे नहीं करती। 09 सितम्बर को आप सिर्फ़ अपना वार्ड पार्षद चुनते हैं।
+    अध्यक्ष को <b>21 सितम्बर</b> को जीते हुए पार्षद मिलकर चुनते हैं।
     <a href="/adhyaksh-kaise-chunte-hain">पूरी जानकारी पढ़ें</a>
   </div>
 
@@ -325,27 +324,27 @@ write("adhyaksh-kaise-chunte-hain.html", page({
   </div>
 
   <div class="note warn"><b>सबसे ज़रूरी बात:</b> अध्यक्ष को जनता सीधे वोट देकर नहीं चुनती।
-    ०९ सितम्बर को आप सिर्फ़ अपने वार्ड का पार्षद चुनते हैं।</div>
+    09 सितम्बर को आप सिर्फ़ अपने वार्ड का पार्षद चुनते हैं।</div>
 
   <div class="sec">
     <h2>पूरी प्रक्रिया</h2>
     <ul>
-      <li><b>०९ सितम्बर २०२६</b> — जनता २५ वार्डों के पार्षद चुनती है (सुबह ७ से शाम ६)</li>
-      <li><b>१४ सितम्बर २०२६</b> — मतगणना, पता चलता है कौन-कौन पार्षद बने</li>
-      <li><b>२१ सितम्बर २०२६</b> — जीते हुए पार्षद बैठक में अध्यक्ष चुनते हैं (सुबह १० से दोपहर २ बजे), गिनती उसी दिन</li>
-      <li><b>२२ सितम्बर २०२६</b> — उपाध्यक्ष का चुनाव</li>
+      <li><b>09 सितम्बर 2026</b> — जनता 25 वार्डों के पार्षद चुनती है (सुबह 7 से शाम 6)</li>
+      <li><b>14 सितम्बर 2026</b> — मतगणना, पता चलता है कौन-कौन पार्षद बने</li>
+      <li><b>21 सितम्बर 2026</b> — जीते हुए पार्षद बैठक में अध्यक्ष चुनते हैं (सुबह 10 से दोपहर 2 बजे), गिनती उसी दिन</li>
+      <li><b>22 सितम्बर 2026</b> — उपाध्यक्ष का चुनाव</li>
     </ul>
   </div>
 
   <div class="sec">
     <h2>दो बातें जो ज़्यादातर लोगों को नहीं पता</h2>
-    <p><b>१. अध्यक्ष बनने के लिए पार्षद होना ज़रूरी नहीं है।</b> नियम 78(2) के अनुसार कोई भी व्यक्ति जो पार्षद बनने योग्य है और अयोग्य नहीं है, अध्यक्ष चुना जा सकता है — चाहे उसने वार्ड का चुनाव लड़ा ही न हो। वोट सिर्फ़ जीते हुए पार्षद डालते हैं।</p>
-    <p><b>२. कुछ लोग अध्यक्ष नहीं बन सकते।</b> नियम 78(4) के अनुसार सांसद, विधायक, और पंचायती राज संस्थाओं के सदस्य या अध्यक्ष अध्यक्ष पद के लिए अयोग्य हैं।</p>
+    <p><b>1. अध्यक्ष बनने के लिए पार्षद होना ज़रूरी नहीं है।</b> नियम 78(2) के अनुसार कोई भी व्यक्ति जो पार्षद बनने योग्य है और अयोग्य नहीं है, अध्यक्ष चुना जा सकता है — चाहे उसने वार्ड का चुनाव लड़ा ही न हो। वोट सिर्फ़ जीते हुए पार्षद डालते हैं।</p>
+    <p><b>2. कुछ लोग अध्यक्ष नहीं बन सकते।</b> नियम 78(4) के अनुसार सांसद, विधायक, और पंचायती राज संस्थाओं के सदस्य या अध्यक्ष अध्यक्ष पद के लिए अयोग्य हैं।</p>
   </div>
 
   <div class="sec">
     <h2>इसका मतलब आपके वोट के लिए क्या है?</h2>
-    <p>आपका एक वोट सीधे अध्यक्ष नहीं चुनता, लेकिन वही तय करता है कि आपके वार्ड से कौन पार्षद बनेगा — और वही पार्षद २१ सितम्बर को अध्यक्ष चुनेगा। इसलिए बोर्ड किस दल का बनेगा, यह २५ वार्डों के नतीजों से तय होता है।</p>
+    <p>आपका एक वोट सीधे अध्यक्ष नहीं चुनता, लेकिन वही तय करता है कि आपके वार्ड से कौन पार्षद बनेगा — और वही पार्षद 21 सितम्बर को अध्यक्ष चुनेगा। इसलिए बोर्ड किस दल का बनेगा, यह 25 वार्डों के नतीजों से तय होता है।</p>
     <a class="btn" href="/adhyaksh">आपकी राय: किसका बोर्ड बनेगा?</a>
     <a class="btn ghost" href="/">अपना वार्ड चुनें</a>
   </div>
@@ -363,7 +362,7 @@ write("gopniyata-niti.html", page({
   body: `
   <div class="head">
     <h1>गोपनीयता नीति</h1>
-    <p class="kshetra">अंतिम बदलाव: ५ सितम्बर २०२६</p>
+    <p class="kshetra">अंतिम बदलाव: 5 सितम्बर 2026</p>
   </div>
 
   <div class="note"><b>छोटे में:</b> हम आपका नाम, फ़ोन नंबर, ईमेल या पता कुछ नहीं लेते।
