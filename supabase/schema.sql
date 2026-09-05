@@ -1,5 +1,21 @@
 -- पोकरण नगर पालिका चुनाव 2026 — जनता की राय
 -- बिना लॉगिन वाला संस्करण। Supabase SQL Editor में पूरा चिपकाकर एक बार "Run" करें।
+--
+-- ⚠️ यह फ़ाइल किसी भी हालत से चलती है — खाली डेटाबेस हो या पुराना schema पड़ा हो।
+--    दोबारा चलाने पर सारे वोट मिट जाएँगे (लॉन्च से पहले यही चाहिए)।
+
+-- ── पुरानी चीज़ें हटाएँ ──────────────────────────────────────────
+drop view     if exists public.shak;
+drop function if exists public.get_counts(smallint);
+drop function if exists public.get_counts(smallint, uuid);
+drop function if exists public.get_totals();
+drop function if exists public.my_vote(smallint);
+drop function if exists public.cast_vote(smallint, text, text);
+drop function if exists public.cast_vote(smallint, text, uuid, text, text);
+drop function if exists public.client_ip_hash();
+drop function if exists public.cfg(text);
+drop function if exists public.phase();
+drop table    if exists public.votes cascade;
 
 -- ── समय की सीमाएँ (UTC में; IST = UTC + 5:30) ───────────────────
 --  मतदान बंद : 07-09-2026 शाम 6:00 IST = 2026-09-07 12:30 UTC
@@ -17,7 +33,6 @@ on conflict (key) do nothing;
 -- ── मत ──────────────────────────────────────────────────────────
 --  ward 0 = अध्यक्ष वाला सवाल (choice: 'bjp' | 'inc' | 'ind')
 --  ward 1..25 = वार्ड पार्षद (choice: प्रत्याशी का क्रमांक '1'..'6')
-drop table if exists public.votes cascade;
 create table public.votes (
   id           bigint generated always as identity primary key,
   ward         smallint not null check (ward between 0 and 25),
