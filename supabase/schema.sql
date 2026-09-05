@@ -87,10 +87,12 @@ begin
     return json_build_object('ok', false, 'code', 'device_limit');
   end if;
 
-  -- परत 4: ढीली IP सीमा — CGNAT की वजह से सिर्फ़ सर्किट-ब्रेकर
+  -- परत 4: बहुत ढीली IP सीमा। पोकरण में Jio/Airtel के CGNAT की वजह से
+  -- सैकड़ों लोग एक ही IP साझा करते हैं — कड़ी सीमा असली मतदाताओं को रोक देती है।
+  -- बॉट Turnstile पहले ही रोक देता है, इसलिए यह सिर्फ़ बाढ़ रोकने का ब्रेक है।
   select count(*) into v_ipc from public.votes
    where ward = p_ward and ip_hash = p_ip and created_at > now() - interval '1 hour';
-  if v_ipc >= 40 then
+  if v_ipc >= 400 then
     return json_build_object('ok', false, 'code', 'rate');
   end if;
 
