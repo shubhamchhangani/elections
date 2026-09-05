@@ -26,7 +26,7 @@ const SPONSORS = [
    खाली छोड़ेंगे तो वह जगह बिलकुल नहीं दिखेगी (कोई ख़ाली डिब्बा नहीं)। */
 /* ⚠️ आपातकालीन स्विच — कोई गंदा विज्ञापन दिखे तो इसे false करके push करें।
    Adsterra तुरंत बंद, और उसकी जगह आपका अपना "विज्ञापन यहाँ लगवाएँ" वाला बॉक्स। */
-const ADSTERRA_ON = true;
+const ADSTERRA_ON = false;
 
 const ADSTERRA = {
   // यह domain हर Adsterra खाते का अलग होता है — GET CODE वाले script src से लें
