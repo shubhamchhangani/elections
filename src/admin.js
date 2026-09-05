@@ -194,22 +194,41 @@ async function loadTraffic() {
 
 /* ── कहाँ क्या दिखे ────────────────────────────────────────── */
 const MODES = {
-  adsterra: "Adsterra का विज्ञापन",
+  adsterra: "विज्ञापन दिखाएँ",
   house:    "अपना न्यौता — 'विज्ञापन यहाँ लगवाएँ'",
   off:      "कुछ नहीं — जगह ग़ायब"
 };
+
+/* इस जगह पर असल में क्या चल रहा है */
+function chalRahaHai(r, hasSponsor) {
+  if (hasSponsor) return ["दुकान का बैनर", "ok"];
+  if (r.fallback === "off")   return ["कुछ नहीं", "off"];
+  if (r.fallback === "house") return ["अपना न्यौता", "ok"];
+  if (r.code) {
+    const c = r.code;
+    const net = /acscdn|aclib|adcash/i.test(c) ? "Adcash"
+              : /highrevenueformat|highperformanceformat|adsterra/i.test(c) ? "Adsterra"
+              : /googlesyndication|adsbygoogle/i.test(c) ? "Google AdSense"
+              : "आपका कोड";
+    return [net, "ok"];
+  }
+  return ["पुरानी Adsterra (कोड में लिखी)", "warn"];
+}
 
 async function loadCfg() {
   const { data, error } = await sb.from("ad_config").select("slot,fallback,code");
   const box = $("#cfg");
   if (error) { box.innerHTML = `<p class="empty">नियंत्रण नहीं आया: ${esc(error.message)}</p>`; return; }
   const by = Object.fromEntries(data.map(r => [r.slot, r]));
+  const { data: sp } = await sb.from("sponsors").select("slot").eq("active", true);
+  const spSlots = new Set((sp || []).map(x => x.slot));
   box.innerHTML = ORDER.map(slot => {
     const r = by[slot] || {};
     return `
     <div class="cfg-box">
       <div class="cfg-row">
         <b>${SLOTS[slot]}</b>
+        <em class="live ${chalRahaHai(r, spSlots.has(slot))[1]}">${chalRahaHai(r, spSlots.has(slot))[0]}</em>
         <select data-cfg="${slot}">
           ${Object.entries(MODES).map(([v, t]) =>
             `<option value="${v}"${r.fallback === v ? " selected" : ""}>${t}</option>`).join("")}
