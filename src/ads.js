@@ -41,6 +41,8 @@ const ADSTERRA = {
     top:    { key: "", w: 320, h: 50  },
     mid:    { key: "", w: 300, h: 250 },
     bottom: { key: "", w: 300, h: 250 },
+    after:  { key: "", w: 300, h: 250 },
+    footer: { key: "", w: 300, h: 250 },
     stick:  { key: "", w: 320, h: 50  },   // नीचे चिपकी पट्टी
   },
   banner: { key: "5e99d15e87d709158409d34747ba1b34", w: 320, h: 50 },   // पुराना, सहारे के लिए
@@ -61,7 +63,7 @@ const get = async (q) => {
 };
 
 const fromDb  = () => get("sponsors?select=slot,img,href,alt&active=eq.true&order=sort.asc");
-const cfgFromDb = () => get("ad_config?select=slot,fallback,code");
+const cfgFromDb = () => get("ad_config?select=slot,fallback,code,height");
 
 const sponsorHtml = s =>
   `<a class="sponsor" href="${s.href}" rel="nofollow sponsored noopener" target="_blank">
@@ -126,7 +128,7 @@ function runGlobal(html) {
 function fillCode(box, code, h) {
   box.classList.add("has-ad");
   const f = document.createElement("iframe");
-  f.style.cssText = `width:100%;max-width:340px;height:${h}px;border:0;display:block`;
+  f.style.cssText = `width:100%;max-width:${h > 300 ? 360 : 340}px;height:${h}px;border:0;display:block`;
   f.setAttribute("scrolling", "no");
   f.title = "विज्ञापन";
   box.appendChild(f);
@@ -174,8 +176,12 @@ function fillAdsterra(box, cfg) {
     bySlot[s.slot].push(s);
   }
 
-  const mode = { ...FALLBACK_IF_DB_DOWN }, code = {};
-  for (const r of (cfgRows || [])) { mode[r.slot] = r.fallback; if (r.code) code[r.slot] = r.code; }
+  const mode = { ...FALLBACK_IF_DB_DOWN }, code = {}, hgt = {};
+  for (const r of (cfgRows || [])) {
+    mode[r.slot] = r.fallback;
+    if (r.code) code[r.slot] = r.code;
+    if (r.height) hgt[r.slot] = r.height;
+  }
 
   if (mode.global !== "off" && code.global) runGlobal(code.global);
 
@@ -185,7 +191,10 @@ function fillAdsterra(box, cfg) {
     if (mine && mine.length) return fillSponsor(box, mine);   // दुकान का बैनर सबसे पहले
     const m = mode[slot];
     if (m === "adsterra") {
-      if (code[slot]) return fillCode(box, code[slot], slot === "mid" || slot === "bottom" ? 260 : 60);
+      if (code[slot]) {
+        const h = hgt[slot] || (["mid","bottom","after","footer"].includes(slot) ? 260 : 60);
+        return fillCode(box, code[slot], h);
+      }
       const u = ADSTERRA.units[slot];
       return fillAdsterra(box, u && u.key ? u : ADSTERRA.banner);
     }

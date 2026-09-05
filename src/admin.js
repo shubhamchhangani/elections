@@ -5,8 +5,10 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 const $  = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 
-const SLOTS = { global: "पूरे पेज पर (AutoTag)", top: "सबसे ऊपर", mid: "बीच में",
-                bottom: "सबसे नीचे", stick: "नीचे चिपकी पट्टी" };
+const SLOTS = { global: "पूरे पेज पर (AutoTag)", top: "सबसे ऊपर", after: "मतपत्र के ठीक बाद",
+                mid: "बीच में", bottom: "सबसे नीचे", footer: "तलहटी के नीचे",
+                stick: "नीचे चिपकी पट्टी" };
+const ORDER = ["global","top","after","mid","bottom","footer","stick"];
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
 
 function say(msg, bad) {
@@ -202,7 +204,7 @@ async function loadCfg() {
   const box = $("#cfg");
   if (error) { box.innerHTML = `<p class="empty">नियंत्रण नहीं आया: ${esc(error.message)}</p>`; return; }
   const by = Object.fromEntries(data.map(r => [r.slot, r]));
-  box.innerHTML = ["global", "top", "mid", "bottom", "stick"].map(slot => {
+  box.innerHTML = ORDER.map(slot => {
     const r = by[slot] || {};
     return `
     <div class="cfg-box">
@@ -218,6 +220,9 @@ async function loadCfg() {
         <summary>विज्ञापन का कोड ${r.code ? "· लगा हुआ है" : "· खाली"}</summary>
         <textarea data-code="${slot}" rows="4"
           placeholder="नेटवर्क से मिला पूरा &lt;script&gt; टैग यहाँ चिपकाएँ। खाली छोड़ेंगे तो पुराना Adsterra चलेगा।">${esc(r.code || "")}</textarea>
+        <label class="hgt">ऊँचाई (px) — बड़े/वीडियो विज्ञापन के लिए 600 तक
+          <input type="number" data-hgt="${slot}" value="${r.height || 0}" min="0" max="900" step="10">
+          <small>0 = अपने आप (पट्टी 60, बड़ा 260)</small></label>
         <button data-savecode="${slot}" class="btn ghost">यह कोड लगाएँ</button>
       </details>
     </div>`;
@@ -226,8 +231,9 @@ async function loadCfg() {
   $$("[data-savecode]").forEach(b => b.addEventListener("click", async () => {
     const slot = b.dataset.savecode;
     const val = $(`[data-code="${slot}"]`).value.trim();
+    const h = Number($(`[data-hgt="${slot}"]`).value) || 0;
     const { error } = await sb.from("ad_config")
-      .update({ code: val || null, updated: new Date().toISOString() }).eq("slot", slot);
+      .update({ code: val || null, height: h, updated: new Date().toISOString() }).eq("slot", slot);
     error ? say(error.message, true) : (say(`${SLOTS[slot]} — कोड ${val ? "लग गया" : "हटा दिया"}, साइट पर तुरंत लागू`), loadCfg());
   }));
 
@@ -241,7 +247,7 @@ async function loadCfg() {
 
 $("#allOff").addEventListener("click", async () => {
   if (!confirm("तीनों जगह से सारे विज्ञापन हट जाएँगे (दुकानों के बैनर फिर भी दिखेंगे)। पक्का?")) return;
-  const { error } = await sb.from("ad_config").update({ fallback: "off" }).in("slot", ["global","top","mid","bottom","stick"]);
+  const { error } = await sb.from("ad_config").update({ fallback: "off" }).in("slot", ORDER);
   if (error) return say(error.message, true);
   say("सारे विज्ञापन बंद"); loadCfg();
 });

@@ -106,6 +106,8 @@ ${body}
   </div>
 </footer>
 
+<div class="wrap">${adSlot("footer")}</div>
+
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <div class="stick" data-ad="stick"></div>
 <script type="module" src="/ads.js"></script>
@@ -267,6 +269,7 @@ for (const w of D.wards) {
   ${gate}
   ${ballot(`वार्ड ${dev(w.ward)} · ${dev(w.pratyashi.length)} प्रत्याशी`, rows)}
 
+  ${adSlot("after")}
   ${shareBtns}
   ${adSlot("mid")}
 
@@ -330,6 +333,7 @@ for (const w of D.wards) {
   ${gate}
   ${ballot("पूरी नगर पालिका · 3 विकल्प", rows)}
 
+  ${adSlot("after")}
   ${shareBtns}
   ${adSlot("mid")}
 
