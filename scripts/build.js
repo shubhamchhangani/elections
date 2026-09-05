@@ -1,0 +1,383 @@
+import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync, rmSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const OUT  = join(ROOT, "dist");
+const D    = JSON.parse(readFileSync(join(ROOT, "data/candidates.json"), "utf8"));
+const SITE = "https://pokaran-chunav.pages.dev";
+const WA   = "919079269147";
+
+const DEVN = ["०","१","२","३","४","५","६","७","८","९"];
+const dev  = n => String(n).replace(/\d/g, d => DEVN[+d]);
+const esc  = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+
+/* ── साँचा ───────────────────────────────────────────────────── */
+// og: टैग सबसे ऊपर — WhatsApp सिर्फ़ head के शुरुआती हिस्से को पढ़ता है
+const page = ({ title, desc, path, og, body, ward = null, schema = "" }) => `<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="पोकरण चुनाव 2026">
+<meta property="og:locale" content="hi_IN">
+<meta property="og:title" content="${esc(og.title)}">
+<meta property="og:description" content="${esc(og.desc)}">
+<meta property="og:url" content="${SITE}${path}">
+<meta property="og:image" content="${SITE}${og.img}">
+<meta property="og:image:width" content="800">
+<meta property="og:image:height" content="418">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>${esc(title)}</title>
+<meta name="description" content="${esc(desc)}">
+<link rel="canonical" href="${SITE}${path}">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martel:wght@700;800&family=Mukta:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="/styles.css">
+${schema}
+</head>
+<body${ward !== null ? ` data-ward="${ward}"` : ""}>
+
+<header class="masthead">
+  <div class="wrap">
+    <b><a href="/">पोकरण नगर पालिका<br>चुनाव २०२६</a></b>
+    <small>जनता की राय</small>
+  </div>
+</header>
+
+<div class="status live hide" data-phase="live"><span class="dot"></span> मतदान चालू · ७ सितम्बर शाम ६ बजे तक</div>
+<div class="status frozen hide" data-phase="frozen">मतदान बंद · नतीजे ९ सितम्बर शाम ६ बजे</div>
+<div class="status result hide" data-phase="result">अंतिम नतीजे · मतदान समाप्त</div>
+
+<main class="wrap">
+${body}
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="disc">
+      <b>यह एक जनमत सर्वेक्षण है।</b> यह चुनाव आयोग या किसी सरकारी संस्था से सम्बंधित नहीं है।
+      यहाँ दिखने वाले आँकड़े इस वेबसाइट पर वोट देने वालों के हैं — ये असली चुनाव परिणाम नहीं हैं।
+      प्रत्याशियों की सूची रिटर्निंग अधिकारी द्वारा जारी प्ररूप-6 (दिनांक ०४.०९.२०२६) से ली गई है।
+    </div>
+    <p><b>इस वेबसाइट पर किसी प्रत्याशी या राजनीतिक दल का विज्ञापन नहीं लिया जाता।</b></p>
+    <p>अपनी दुकान या व्यवसाय का विज्ञापन यहाँ लगवाएँ — बैनर, वीडियो या स्लाइडर।
+       <a href="https://wa.me/${WA}?text=${encodeURIComponent("पोकरण चुनाव वेबसाइट पर विज्ञापन के बारे में जानकारी चाहिए")}">WhatsApp पर संपर्क करें</a></p>
+    <p><a href="/">सभी वार्ड</a> · <a href="/adhyaksh">अध्यक्ष</a> · <a href="/adhyaksh-kaise-chunte-hain">अध्यक्ष कैसे चुना जाता है?</a></p>
+    <p style="font-size:12.5px">मतदान ०९ सितम्बर २०२६ · मतगणना १४ सितम्बर २०२६</p>
+  </div>
+</footer>
+
+<script src="/ads.js" defer></script>
+<script type="module" src="/app.js"></script>
+</body>
+</html>`;
+
+/* ── मतपत्र की पंक्तियाँ ─────────────────────────────────────── */
+const symImg = (slug, naam) =>
+  `<img src="/img/symbols/${slug}.png" alt="${esc(naam)}" loading="lazy"
+        onerror="this.outerHTML='<div class=&quot;fallback&quot;>${esc(naam)}</div>'">`;
+
+const row = ({ choice, dal, naam, dalNaam, chinhSlug, chinhNaam, serial }) => `
+    <button class="row" data-choice="${choice}" data-dal="${dal}" type="button">
+      <span class="fill"></span>
+      <span class="serial">${dev(serial)}</span>
+      <span class="who"><span class="naam">${esc(naam)}</span><span class="dal">${esc(dalNaam)}</span></span>
+      <span class="chinh">${symImg(chinhSlug, chinhNaam)}<small>${esc(chinhNaam)}</small></span>
+      <span class="btn-cell"><i class="lamp"></i><i class="evm-btn"></i></span>
+      <span class="pct hide"><b>—</b><small></small></span>
+    </button>`;
+
+const ballot = (label, rows) => `
+  <div class="ballot">
+    <div class="ballot-head"><span>${label}</span><span><span data-total>०</span> वोट</span></div>
+${rows}
+  </div>`;
+
+const leader = `
+  <div class="leader hide">
+    <div class="cap"><span>अभी आगे चल रहे हैं</span><span>जनता की राय</span></div>
+    <div class="body"><span class="art"></span>
+      <div><p class="naam"></p><p class="meta"></p></div>
+      <div class="big"></div>
+    </div>
+    <div class="foot"><span><b data-total>०</b> लोगों की राय</span><span>pokaran-chunav.pages.dev</span></div>
+  </div>`;
+
+const gate = `
+  <div class="gate hide">
+    <p class="count">०</p>
+    <p></p>
+    <div class="track"><i style="width:0"></i></div>
+  </div>`;
+
+const shareBtns = `
+  <button class="btn wa" data-share="wa" type="button">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.5 14.1c-.2.7-1.3 1.3-1.9 1.4-.5.1-1.1.1-1.8-.1-.4-.1-1-.3-1.7-.6-3-1.3-4.9-4.3-5.1-4.5-.1-.2-1.2-1.5-1.2-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.3.5-.3.3c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.2.4-.2.6-.1l2 .9c.2.1.4.2.4.3.1.2.1.7-.1 1.3Z"/></svg>
+    WhatsApp पर भेजें
+  </button>
+  <button class="btn ghost" data-share="any" type="button">लिंक कॉपी करें</button>`;
+
+const adSlot = `<div class="ad" data-ad></div>`;
+
+/* ── पृष्ठ बनाना ─────────────────────────────────────────────── */
+if (existsSync(OUT)) rmSync(OUT, { recursive: true });
+mkdirSync(OUT, { recursive: true });
+const pages = [];
+const write = (p, html) => { const f = join(OUT, p); mkdirSync(dirname(f), { recursive: true }); writeFileSync(f, html); pages.push(p); };
+
+const P = D.parties;
+
+/* होमपेज */
+{
+  const tiles = D.wards.map(w =>
+    `<a href="/ward-${w.ward}"><span>${dev(w.ward)}</span><small>वार्ड</small></a>`).join("\n    ");
+
+  const noINC = D.wards.filter(w => !w.pratyashi.some(p => p.dal === "inc")).map(w => w.ward);
+
+  write("index.html", page({
+    title: "पोकरण नगर पालिका चुनाव 2026 — वार्डवार प्रत्याशी सूची और जनता की राय",
+    desc: "पोकरण नगर पालिका चुनाव 2026 के सभी 25 वार्डों के 74 प्रत्याशी, उनके चुनाव चिन्ह और जनता की राय। अपने वार्ड में देखें कौन आगे चल रहा है।",
+    path: "/",
+    og: { title: "पोकरण नगर पालिका चुनाव 2026 — आपके वार्ड में कौन जीत रहा है?",
+          desc: "25 वार्ड, 74 प्रत्याशी। अपना वार्ड चुनें और देखें जनता की राय।",
+          img: "/og/home.png" },
+    schema: `<script type="application/ld+json">${JSON.stringify({
+      "@context":"https://schema.org","@type":"WebSite","name":"पोकरण चुनाव 2026 — जनता की राय",
+      "url":SITE,"inLanguage":"hi-IN"})}</script>`,
+    body: `
+  <div class="head">
+    <h1>आपके वार्ड में कौन जीत रहा है?</h1>
+    <p class="kshetra">पोकरण नगर पालिका के सभी २५ वार्ड · ७४ प्रत्याशी · अपना वार्ड चुनें</p>
+  </div>
+
+  <div class="grid">
+    ${tiles}
+  </div>
+
+  ${adSlot}
+
+  <div class="sec">
+    <h2>अध्यक्ष किस पार्टी का बनेगा?</h2>
+    <p>२५ वार्डों में से जिस दल के सबसे ज़्यादा पार्षद जीतेंगे, अध्यक्ष उसी का बनेगा। आपकी क्या राय है?</p>
+    <a class="btn" href="/adhyaksh">अध्यक्ष वाले सवाल पर वोट दें</a>
+  </div>
+
+  <div class="sec">
+    <h2>चुनाव की तारीख़ें</h2>
+    <ul>
+      <li><b>०९ सितम्बर २०२६</b> — मतदान, सुबह ७ से शाम ६ बजे तक</li>
+      <li><b>१४ सितम्बर २०२६</b> — मतगणना</li>
+      <li><b>२१ सितम्बर २०२६</b> — अध्यक्ष का चुनाव (जीते हुए पार्षदों द्वारा)</li>
+    </ul>
+    <p><a href="/adhyaksh-kaise-chunte-hain">अध्यक्ष कैसे चुना जाता है? पूरी जानकारी पढ़ें →</a></p>
+  </div>
+
+  <div class="sec">
+    <h2>इस बार की एक ख़ास बात</h2>
+    <p>भारतीय जनता पार्टी ने सभी २५ वार्डों में प्रत्याशी उतारे हैं, जबकि कांग्रेस ने २१ में।
+       <b>वार्ड ${noINC.map(dev).join(", ")} में कांग्रेस का कोई प्रत्याशी नहीं है</b> — इन वार्डों में मुक़ाबला भाजपा और निर्दलीयों के बीच है।
+       कुल ७४ प्रत्याशियों में २८ निर्दलीय हैं।</p>
+  </div>
+
+  ${shareBtns}
+  ${adSlot}`
+  }));
+}
+
+/* वार्ड पृष्ठ */
+for (const w of D.wards) {
+  const rows = w.pratyashi.map(p => row({
+    choice: String(p.n), dal: p.dal, naam: p.naam,
+    dalNaam: P[p.dal].naam, chinhSlug: p.chinh, chinhNaam: D.symbols[p.chinh], serial: p.n
+  })).join("\n");
+
+  const naamList = w.pratyashi.map(p => p.naam).join(", ");
+
+  write(`ward-${w.ward}.html`, page({
+    ward: w.ward,
+    title: `पोकरण वार्ड ${w.ward} प्रत्याशी सूची 2026 — कौन जीत रहा है? | नगर पालिका चुनाव`,
+    desc: `पोकरण नगर पालिका वार्ड ${w.ward} के ${w.pratyashi.length} प्रत्याशी: ${naamList}। ${w.kshetra}। चुनाव चिन्ह और जनता की राय देखें।`,
+    path: `/ward-${w.ward}`,
+    og: { title: `वार्ड ${w.ward} में कौन जीत रहा है? — पोकरण चुनाव 2026`,
+          desc: `${w.kshetra} · ${w.pratyashi.length} प्रत्याशी। अपना वोट दें और जनता की राय देखें।`,
+          img: `/og/ward-${w.ward}.png` },
+    schema: `<script type="application/ld+json">${JSON.stringify({
+      "@context":"https://schema.org","@type":"ItemList",
+      "name":`पोकरण नगर पालिका वार्ड ${w.ward} प्रत्याशी 2026`,
+      "numberOfItems":w.pratyashi.length,
+      "itemListElement":w.pratyashi.map(p=>({"@type":"ListItem","position":p.n,
+        "item":{"@type":"Person","name":p.naam,"affiliation":P[p.dal].naam}}))})}</script>`,
+    body: `
+  <div class="head">
+    <h1>वार्ड ${dev(w.ward)}</h1>
+    <p class="kshetra">${esc(w.kshetra)}</p>
+    <p class="sub" data-phase="live">अपने प्रत्याशी पर टैप करें — एक Google खाते से एक ही वोट।</p>
+    <p class="sub hide" data-phase="frozen">मतदान बंद है। नतीजे ९ सितम्बर शाम ६ बजे खुलेंगे।</p>
+    <p class="sub hide" data-phase="result">यह जनता की राय का अंतिम नतीजा है।</p>
+  </div>
+
+  ${leader}
+  ${gate}
+  ${ballot(`वार्ड ${dev(w.ward)} · ${dev(w.pratyashi.length)} प्रत्याशी`, rows)}
+
+  ${shareBtns}
+  ${adSlot}
+
+  <div class="sec">
+    <h2>वार्ड ${dev(w.ward)} के प्रत्याशी</h2>
+    <ul>
+      ${w.pratyashi.map(p => `<li><b>${esc(p.naam)}</b> — ${esc(P[p.dal].naam)}, चिन्ह: ${esc(D.symbols[p.chinh])}<br><span style="color:#5A5148;font-size:14px">${esc(p.pata)}</span></li>`).join("\n      ")}
+    </ul>
+    <p style="font-size:13.5px;color:#5A5148">स्रोत: प्ररूप-6, रिटर्निंग अधिकारी (उपखण्ड अधिकारी) नगर पालिका पोकरण, दिनांक ०४.०९.२०२६</p>
+  </div>
+
+  <div class="sec">
+    <h2>दूसरे वार्ड</h2>
+    <div class="grid">
+      ${D.wards.map(x => `<a href="/ward-${x.ward}"${x.ward===w.ward?' style="background:#000;color:#fff"':''}><span>${dev(x.ward)}</span><small>वार्ड</small></a>`).join("\n      ")}
+    </div>
+    <a class="btn ghost" href="/adhyaksh">अध्यक्ष किस पार्टी का बनेगा?</a>
+  </div>`
+  }));
+}
+
+/* अध्यक्ष */
+{
+  const opts = [
+    { c: "bjp", naam: "भारतीय जनता पार्टी", chinh: "kamal", cn: "कमल" },
+    { c: "inc", naam: "इण्डियन नेशनल कांग्रेस", chinh: "haath", cn: "हाथ" },
+    { c: "ind", naam: "निर्दलीय", chinh: null, cn: "निर्दलीय" }
+  ];
+  const rows = opts.map((o, i) => `
+    <button class="row" data-choice="${o.c}" data-dal="${o.c}" type="button">
+      <span class="fill"></span>
+      <span class="serial">${dev(i + 1)}</span>
+      <span class="who"><span class="naam">${esc(o.naam)}</span><span class="dal">${o.c==="ind"?"किसी दल से नहीं":"राष्ट्रीय दल"}</span></span>
+      <span class="chinh">${o.chinh ? symImg(o.chinh, o.cn) : `<div class="fallback">निर्दलीय</div>`}<small>${esc(o.cn)}</small></span>
+      <span class="btn-cell"><i class="lamp"></i><i class="evm-btn"></i></span>
+      <span class="pct hide"><b>—</b><small></small></span>
+    </button>`).join("\n");
+
+  write("adhyaksh.html", page({
+    ward: 0,
+    title: "पोकरण नगर पालिका अध्यक्ष 2026 — किस पार्टी का बोर्ड बनेगा? | जनता की राय",
+    desc: "पोकरण नगर पालिका चुनाव 2026 में किस दल का बोर्ड बनेगा और अध्यक्ष किसका होगा — भाजपा, कांग्रेस या निर्दलीय? जनता की राय में अपना वोट दें।",
+    path: "/adhyaksh",
+    og: { title: "पोकरण में किस पार्टी का बोर्ड बनेगा? — चुनाव 2026",
+          desc: "भाजपा, कांग्रेस या निर्दलीय — आपकी क्या राय है? एक टैप में वोट दें।",
+          img: "/og/adhyaksh.png" },
+    body: `
+  <div class="head">
+    <h1>अध्यक्ष किस पार्टी का बनेगा?</h1>
+    <p class="kshetra">२५ वार्डों में जिस दल के सबसे ज़्यादा पार्षद जीतेंगे, अध्यक्ष उसी दल का बनेगा।</p>
+    <p class="sub" data-phase="live">अपनी राय पर टैप करें — एक Google खाते से एक ही वोट।</p>
+    <p class="sub hide" data-phase="frozen">मतदान बंद है। नतीजे ९ सितम्बर शाम ६ बजे खुलेंगे।</p>
+    <p class="sub hide" data-phase="result">यह जनता की राय का अंतिम नतीजा है।</p>
+  </div>
+
+  ${leader}
+  ${gate}
+  ${ballot("पूरी नगर पालिका · ३ विकल्प", rows)}
+
+  ${shareBtns}
+  ${adSlot}
+
+  <div class="note">
+    <b>ध्यान दें:</b> अध्यक्ष का चुनाव जनता सीधे नहीं करती। ०९ सितम्बर को आप सिर्फ़ अपना वार्ड पार्षद चुनते हैं।
+    अध्यक्ष को <b>२१ सितम्बर</b> को जीते हुए पार्षद मिलकर चुनते हैं।
+    <a href="/adhyaksh-kaise-chunte-hain">पूरी जानकारी पढ़ें</a>
+  </div>
+
+  <div class="sec">
+    <h2>अपना वार्ड चुनें</h2>
+    <div class="grid">
+      ${D.wards.map(x => `<a href="/ward-${x.ward}"><span>${dev(x.ward)}</span><small>वार्ड</small></a>`).join("\n      ")}
+    </div>
+  </div>`
+  }));
+}
+
+/* व्याख्या पृष्ठ — SEO + सच में काम की जानकारी */
+write("adhyaksh-kaise-chunte-hain.html", page({
+  title: "नगर पालिका अध्यक्ष कैसे चुना जाता है? — राजस्थान नियम 78 | पोकरण 2026",
+  desc: "राजस्थान में नगर पालिका अध्यक्ष जनता सीधे नहीं चुनती। जीते हुए पार्षद चुनते हैं। नियम 78, तारीख़ें और पूरी प्रक्रिया आसान हिन्दी में।",
+  path: "/adhyaksh-kaise-chunte-hain",
+  og: { title: "नगर पालिका अध्यक्ष कैसे चुना जाता है?",
+        desc: "जनता नहीं, पार्षद चुनते हैं। और अध्यक्ष बनने के लिए पार्षद होना भी ज़रूरी नहीं। जानिए पूरा नियम।",
+        img: "/og/home.png" },
+  body: `
+  <div class="head">
+    <h1>अध्यक्ष कैसे चुना जाता है?</h1>
+    <p class="kshetra">राजस्थान नगर पालिका (चुनाव) नियम 1994, नियम 78</p>
+  </div>
+
+  <div class="note warn"><b>सबसे ज़रूरी बात:</b> अध्यक्ष को जनता सीधे वोट देकर नहीं चुनती।
+    ०९ सितम्बर को आप सिर्फ़ अपने वार्ड का पार्षद चुनते हैं।</div>
+
+  <div class="sec">
+    <h2>पूरी प्रक्रिया</h2>
+    <ul>
+      <li><b>०९ सितम्बर २०२६</b> — जनता २५ वार्डों के पार्षद चुनती है (सुबह ७ से शाम ६)</li>
+      <li><b>१४ सितम्बर २०२६</b> — मतगणना, पता चलता है कौन-कौन पार्षद बने</li>
+      <li><b>२१ सितम्बर २०२६</b> — जीते हुए पार्षद बैठक में अध्यक्ष चुनते हैं (सुबह १० से दोपहर २ बजे), गिनती उसी दिन</li>
+      <li><b>२२ सितम्बर २०२६</b> — उपाध्यक्ष का चुनाव</li>
+    </ul>
+  </div>
+
+  <div class="sec">
+    <h2>दो बातें जो ज़्यादातर लोगों को नहीं पता</h2>
+    <p><b>१. अध्यक्ष बनने के लिए पार्षद होना ज़रूरी नहीं है।</b> नियम 78(2) के अनुसार कोई भी व्यक्ति जो पार्षद बनने योग्य है और अयोग्य नहीं है, अध्यक्ष चुना जा सकता है — चाहे उसने वार्ड का चुनाव लड़ा ही न हो। वोट सिर्फ़ जीते हुए पार्षद डालते हैं।</p>
+    <p><b>२. कुछ लोग अध्यक्ष नहीं बन सकते।</b> नियम 78(4) के अनुसार सांसद, विधायक, और पंचायती राज संस्थाओं के सदस्य या अध्यक्ष अध्यक्ष पद के लिए अयोग्य हैं।</p>
+  </div>
+
+  <div class="sec">
+    <h2>इसका मतलब आपके वोट के लिए क्या है?</h2>
+    <p>आपका एक वोट सीधे अध्यक्ष नहीं चुनता, लेकिन वही तय करता है कि आपके वार्ड से कौन पार्षद बनेगा — और वही पार्षद २१ सितम्बर को अध्यक्ष चुनेगा। इसलिए बोर्ड किस दल का बनेगा, यह २५ वार्डों के नतीजों से तय होता है।</p>
+    <a class="btn" href="/adhyaksh">आपकी राय: किसका बोर्ड बनेगा?</a>
+    <a class="btn ghost" href="/">अपना वार्ड चुनें</a>
+  </div>
+
+  ${adSlot}`
+}));
+
+/* स्थिर फ़ाइलें */
+cpSync(join(ROOT, "src/styles.css"), join(OUT, "styles.css"));
+cpSync(join(ROOT, "src/app.js"),    join(OUT, "app.js"));
+cpSync(join(ROOT, "src/config.js"), join(OUT, "config.js"));
+cpSync(join(ROOT, "src/ads.js"),    join(OUT, "ads.js"));
+if (existsSync(join(ROOT, "public"))) cpSync(join(ROOT, "public"), OUT, { recursive: true });
+
+/* _redirects — साफ़ URL (/ward-1 → ward-1.html) */
+writeFileSync(join(OUT, "_redirects"),
+  D.wards.map(w => `/ward-${w.ward}  /ward-${w.ward}.html  200`).join("\n") +
+  `\n/adhyaksh  /adhyaksh.html  200\n/adhyaksh-kaise-chunte-hain  /adhyaksh-kaise-chunte-hain.html  200\n`);
+
+writeFileSync(join(OUT, "_headers"),
+`/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+/img/*
+  Cache-Control: public, max-age=604800
+/og/*
+  Cache-Control: public, max-age=604800
+`);
+
+const urls = ["/", ...D.wards.map(w => `/ward-${w.ward}`), "/adhyaksh", "/adhyaksh-kaise-chunte-hain"];
+writeFileSync(join(OUT, "sitemap.xml"),
+`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.map(u => `  <url><loc>${SITE}${u}</loc><changefreq>hourly</changefreq><priority>${u==="/"?"1.0":"0.8"}</priority></url>`).join("\n")}
+</urlset>`);
+
+writeFileSync(join(OUT, "robots.txt"), `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`);
+
+writeFileSync(join(OUT, "favicon.svg"),
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#000"/><rect x="10" y="14" width="44" height="36" fill="#FBFAF7"/><rect x="10" y="14" width="10" height="36" fill="#12457E"/><rect x="26" y="22" width="22" height="4" fill="#1C1814"/><rect x="26" y="31" width="22" height="4" fill="#1C1814"/><rect x="26" y="40" width="14" height="4" fill="#1C1814"/></svg>`);
+
+console.log(`✓ ${pages.length} पृष्ठ बने → dist/`);
+console.log(`  ${urls.length} URLs · sitemap · robots · _redirects · _headers`);
