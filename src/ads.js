@@ -132,13 +132,22 @@ function fillCode(box, code, h) {
   const f = document.createElement("iframe");
   f.style.cssText = `width:100%;max-width:${h > 300 ? 360 : 340}px;height:${h}px;border:0;display:block`;
   f.setAttribute("scrolling", "no");
+  f.loading = "lazy";
   f.title = "विज्ञापन";
+
+  // ⚠️ यही सबसे ज़रूरी लाइन है।
+  // allow-same-origin और allow-top-navigation जान-बूझकर नहीं दिए गए —
+  // इसलिए विज्ञापन का कोड न हमारा पन्ना पढ़ सकता है, न उसे कहीं और भेज सकता है।
+  // यानी वोट का बटन दबाने पर कोई विज्ञापन बीच में नहीं आ सकता।
+  // allow-popups इसलिए है कि कोई विज्ञापन पर जान-बूझकर क्लिक करे तो वह
+  // नए टैब में खुले — हमारा पन्ना वहीं का वहीं रहे।
+  f.setAttribute("sandbox", "allow-scripts allow-popups allow-popups-to-escape-sandbox allow-forms");
+  f.srcdoc = `<!doctype html><html><head><meta charset="utf-8">
+    <style>html,body{margin:0;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden}</style>
+    </head><body>${code}</body></html>`;
+
   box.appendChild(f);
   if (box.dataset.ad === "stick") addStickClose(box);
-  const d = f.contentDocument;
-  d.open();
-  d.write(`<body style="margin:0;display:flex;align-items:center;justify-content:center">${code}</body>`);
-  d.close();
 }
 
 function addStickClose(box) {
