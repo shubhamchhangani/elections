@@ -1,16 +1,16 @@
 /* ═══════════════════════════════════════════════════════════════
-   विज्ञापन — 5 जगहें: top · mid · bottom · left · right
-   left/right सिर्फ़ 1100px से चौड़ी स्क्रीन (डेस्कटॉप) पर दिखती हैं।
+   विज्ञापन — 3 जगहें: top · mid · bottom
 
-   नियम: जिस जगह पर प्रायोजक (दुकान) होगा वहाँ उसी का बैनर।
-         जो जगह ख़ाली रहेगी वहाँ Adsterra अपने आप भर देगा।
+   नियम: प्रायोजक (दुकान) का बैनर किसी भी जगह लग सकता है।
+         Adsterra सिर्फ़ mid और bottom भरता है — top कभी नहीं।
+
+   क्यों: top पर विज्ञापन होने से पेज खुलते ही सबसे पहले वही दिखता है और
+   मतपत्र नीचे चला जाता है। वह जगह सिर्फ़ पैसा देने वाली दुकान के लिए रखी है।
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── 1. प्रायोजक — दुकानों के बैनर। पैसा मिलते ही यहाँ जोड़ें ──
-   slot:  "top"    सबसे ऊपर, सबसे महँगा
-          "left"   डेस्कटॉप बाईं पट्टी
-          "right"  डेस्कटॉप दाईं पट्टी
-          "mid"    बीच में
+   slot:  "top"    सबसे ऊपर, सबसे महँगा — यहाँ Adsterra नहीं आता
+          "mid"    नतीजे के ठीक बाद
           "bottom" सबसे नीचे, सबसे सस्ता
    एक ही slot में कई दुकानें डालेंगे तो वे बारी-बारी घूमेंगी (हर 8 सेकंड)।
 
@@ -28,8 +28,8 @@ const SPONSORS = [
 const ADSTERRA = {
   // यह domain हर Adsterra खाते का अलग होता है — GET CODE वाले script src से लें
   host:   "https://www.highrevenueformat.com",
-  banner: { key: "5e99d15e87d709158409d34747ba1b34", w: 320, h: 50  },  // top / mid / bottom
-  side:   { key: "fc710b3acf3f5c424958044ec52129f4", w: 160, h: 600 },  // डेस्कटॉप की बग़ल वाली पट्टियाँ
+  banner: { key: "5e99d15e87d709158409d34747ba1b34", w: 320, h: 50 },
+  slots:  ["mid", "bottom"],          // Adsterra सिर्फ़ इन्हीं जगहों पर
 };
 
 /* ─────────────────────────────────────────────────────────── */
@@ -70,5 +70,5 @@ document.querySelectorAll("[data-ad]").forEach(box => {
   const slot = box.dataset.ad;
   const mine = bySlot[slot];
   if (mine && mine.length) return fillSponsor(box, mine);
-  fillAdsterra(box, (slot === "left" || slot === "right") ? ADSTERRA.side : ADSTERRA.banner);
+  if (ADSTERRA.slots.includes(slot)) fillAdsterra(box, ADSTERRA.banner);
 });
