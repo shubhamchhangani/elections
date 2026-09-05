@@ -67,3 +67,7 @@ body.admin h3{font-family:"Martel",Georgia,serif;font-size:16px;margin:18px 0 8p
 .wt .t{width:52px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
 .wt .p{display:block;font-size:11.5px;color:var(--ink-soft)}
 .wt tr.low .w{background:#FBE9E9;color:#9E1B1B}
+
+.tw td,.tw th{padding:7px 6px}
+.tw td:first-child{text-align:right}
+.adh-row span.wide{flex:0 0 148px;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

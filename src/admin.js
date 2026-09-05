@@ -25,7 +25,7 @@ function say(msg, bad) {
 function applySession(session) {
   $("#login").hidden = !!session;
   $("#panel").hidden = !session;
-  if (session) { $("#who").textContent = session.user.email; loadStats(); load(); loadCfg(); }
+  if (session) { $("#who").textContent = session.user.email; loadStats(); loadTraffic(); load(); loadCfg(); }
 }
 
 $("#loginForm").addEventListener("submit", async e => {
@@ -137,7 +137,57 @@ async function loadStats() {
     <p class="dims">लाल रंग वाले वार्ड में 8 से कम वोट हैं — वहाँ लिंक और भेजें।</p>`;
 }
 
-$("#reload").addEventListener("click", () => { loadStats(); load(); loadCfg(); });
+$("#reload").addEventListener("click", () => { loadStats(); loadTraffic(); load(); loadCfg(); });
+
+/* ── कितने लोग आए ─────────────────────────────────────────── */
+const REF_NAAM = { whatsapp:"WhatsApp", google:"Google", direct:"सीधे लिंक से",
+  facebook:"Facebook", instagram:"Instagram", twitter:"X/Twitter", telegram:"Telegram" };
+
+async function loadTraffic() {
+  const box = $("#traffic");
+  const { data: d, error } = await sb.rpc("admin_traffic");
+  if (error) { box.innerHTML = `<p class="empty">नहीं आया: ${esc(error.message)}<br><small>supabase/traffic.sql चलाना बाक़ी है?</small></p>`; return; }
+
+  const wins = d.windows || [];
+  const pages = d.pages || [], refs = d.refs || [];
+  const maxP = Math.max(1, ...pages.map(p => p.hits));
+  const maxR = Math.max(1, ...refs.map(r => r.hits));
+  const hrs = (d.hourly || []).slice(-24);
+  const maxH = Math.max(1, ...hrs.map(h => h.c));
+
+  const wardName = p => {
+    const m = p.match(/^\/ward-(\d+)$/);
+    if (m) return "वार्ड " + m[1];
+    return { "/":"मुख्य पन्ना", "/adhyaksh":"अध्यक्ष",
+      "/adhyaksh-kaise-chunte-hain":"अध्यक्ष कैसे चुना जाता है",
+      "/gopniyata-niti":"गोपनीयता नीति" }[p] || p;
+  };
+
+  box.innerHTML = `
+    <table class="wt tw">
+      <thead><tr><th>समय</th><th>पेज खुले</th><th>अलग लोग</th></tr></thead>
+      <tbody>${wins.map(w => `<tr>
+        <td>${esc(w.label)}</td><td class="t">${nf(w.hits)}</td><td class="t">${nf(w.uniq)}</td>
+      </tr>`).join("")}</tbody>
+    </table>
+
+    <h3>हर घंटे (भारतीय समय)</h3>
+    <div class="spark">${hrs.map(h =>
+      `<i style="height:${Math.max(3, Math.round((h.c/maxH)*100))}%" title="${esc(h.h)} — ${h.c}"></i>`).join("")}</div>
+    <p class="dims">${hrs.length ? esc(hrs[0].h) + "  →  " + esc(hrs[hrs.length-1].h) : ""}</p>
+
+    <h3>कहाँ से आए (24 घंटे)</h3>
+    ${refs.map(r => `<div class="adh-row">
+      <span>${esc(REF_NAAM[r.ref] || r.ref)}</span>
+      <i style="width:${Math.round((r.hits/maxR)*100)}%;background:#12457E"></i>
+      <b>${nf(r.hits)}</b></div>`).join("") || '<p class="empty">अभी कुछ नहीं</p>'}
+
+    <h3>सबसे ज़्यादा खुले पन्ने (24 घंटे)</h3>
+    ${pages.map(p => `<div class="adh-row">
+      <span class="wide">${esc(wardName(p.path))}</span>
+      <i style="width:${Math.round((p.hits/maxP)*100)}%;background:#F26722"></i>
+      <b>${nf(p.hits)}</b></div>`).join("") || '<p class="empty">अभी कुछ नहीं</p>'}`;
+}
 
 /* ── कहाँ क्या दिखे ────────────────────────────────────────── */
 const MODES = {

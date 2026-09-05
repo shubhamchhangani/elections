@@ -338,6 +338,28 @@ function wireShare() {
   }));
 }
 
+/* ── कौन कहाँ से आया — अपनी गिनती, GA के इंतज़ार के बिना ──── */
+function refSource() {
+  const r = document.referrer || "";
+  if (!r) return "direct";
+  try {
+    const h = new URL(r).hostname.replace(/^www\./, "");
+    if (/whatsapp|wa\.me/.test(h))          return "whatsapp";
+    if (/google|googleusercontent/.test(h)) return "google";
+    if (/facebook|fb\./.test(h))            return "facebook";
+    if (/instagram/.test(h))                return "instagram";
+    if (/t\.co|twitter|x\.com/.test(h))     return "twitter";
+    if (/telegram|t\.me/.test(h))           return "telegram";
+    if (h.endsWith("pokaranchunav.pages.dev")) return "इसी साइट से";
+    return h.slice(0, 40);
+  } catch { return "other"; }
+}
+sb.rpc("log_hit", {
+  p_path: location.pathname.slice(0, 120) || "/",
+  p_ref: refSource(),
+  p_visitor: TOKEN
+}).then(() => {}, () => {});
+
 /* ── शुरुआत ─────────────────────────────────────────────────── */
 window.addEventListener("error", e => dbg("JS गड़बड़ी: " + e.message + " @ " + (e.filename||"").split("/").pop() + ":" + e.lineno));
 window.addEventListener("unhandledrejection", e => dbg("promise गड़बड़ी: " + (e.reason && e.reason.message || e.reason)));

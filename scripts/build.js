@@ -435,6 +435,9 @@ window.PARTIES = ${JSON.stringify(Object.fromEntries(Object.entries(D.parties).m
     </div>
     <div id="stats"><p class="empty">आ रहे हैं…</p></div>
 
+    <h2>कितने लोग आए</h2>
+    <div id="traffic"><p class="empty">आ रहे हैं…</p></div>
+
     <div class="row-head">
       <h2>चालू बैनर</h2>
       <button id="logout" class="link">लॉगआउट</button>
@@ -522,6 +525,14 @@ write("gopniyata-niti.html", page({
     आपके ब्राउज़र से कुछ तकनीकी जानकारी लेता है। इसके लिए
     <a href="https://www.cloudflare.com/application-services/terms/turnstile-privacy-addendum/" rel="noopener" target="_blank">Cloudflare Turnstile Privacy Addendum</a>
     लागू होता है। Turnstile का उपयोग विज्ञापन के लिए नहीं किया जाता।</p>
+  </div>
+
+  <div class="sec">
+    <h2>कितने लोग आए, इसकी गिनती</h2>
+    <p>यह जानने के लिए कि कितने लोग वेबसाइट पर आए और कौन से वार्ड के पन्ने ज़्यादा देखे गए,
+    हर पन्ना खुलने पर सिर्फ़ तीन चीज़ें दर्ज होती हैं: <b>कौन सा पन्ना खुला</b>,
+    <b>किस ज़रिये से आया</b> (जैसे WhatsApp या Google) और वही बेतरतीब पहचान-टोकन
+    जो दोबारा वोट रोकने के लिए इस्तेमाल होता है। <b>नाम, नंबर, ईमेल या जगह कुछ दर्ज नहीं होती।</b></p>
   </div>
 
   <div class="sec">
