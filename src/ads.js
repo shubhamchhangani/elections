@@ -33,8 +33,16 @@ const FALLBACK_IF_DB_DOWN = { top: "house", mid: "house", bottom: "house" };
 
 const ADSTERRA = {
   // यह domain हर Adsterra खाते का अलग होता है — GET CODE वाले script src से लें
-  host:   "https://www.highrevenueformat.com",
-  banner: { key: "5e99d15e87d709158409d34747ba1b34", w: 320, h: 50 },
+  host: "https://www.highrevenueformat.com",
+
+  // हर जगह के लिए अलग नाप। 300x250 वाला 320x50 से 2-4 गुना ज़्यादा देता है,
+  // इसलिए बीच और नीचे वहीं रखा है। key ख़ाली हो तो नीचे वाला 320x50 चलेगा।
+  units: {
+    top:    { key: "",                                 w: 320, h: 50  },
+    mid:    { key: "",                                 w: 300, h: 250 },
+    bottom: { key: "",                                 w: 300, h: 250 },
+  },
+  banner: { key: "5e99d15e87d709158409d34747ba1b34", w: 320, h: 50 },   // पुराना, सहारे के लिए
 };
 
 /* ─────────────────────────────────────────────────────────── */
@@ -131,7 +139,10 @@ function fillAdsterra(box, cfg) {
     const mine = bySlot[slot];
     if (mine && mine.length) return fillSponsor(box, mine);   // दुकान का बैनर सबसे पहले
     const m = mode[slot];
-    if (m === "adsterra") return fillAdsterra(box, ADSTERRA.banner);
+    if (m === "adsterra") {
+      const u = ADSTERRA.units[slot];
+      return fillAdsterra(box, u && u.key ? u : ADSTERRA.banner);
+    }
     // ऊपर वाली पट्टी यही बात पहले से कह रही है — top पर दोबारा मत दिखाओ
     if (m === "house" && slot !== "top" ) return fillHouse(box);
     /* off — कुछ नहीं */
