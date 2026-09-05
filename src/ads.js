@@ -85,14 +85,13 @@ async function loadGrand() {
 function fillHouse(box) {
   box.classList.add("has-house");
   const proof = _grand >= 100
-    ? `<i>अब तक <b>${_grand.toLocaleString("en-IN")}</b> लोग वोट दे चुके हैं</i>`
+    ? ` · <i><b>${_grand.toLocaleString("en-IN")}</b> लोग वोट दे चुके हैं</i>`
     : "";
   box.innerHTML = `<a class="house" href="https://wa.me/${HOUSE_WA}?text=${
     encodeURIComponent("पोकरण चुनाव वेबसाइट पर विज्ञापन के बारे में जानकारी चाहिए")
   }" rel="noopener" target="_blank">
-    <b>अपने व्यवसाय का विज्ञापन यहाँ लगवाएं</b>
-    ${proof}
-    <span>दुकान · कोचिंग · शोरूम · होटल — WhatsApp पर संपर्क करें</span>
+    <b>अपने व्यवसाय का विज्ञापन यहाँ लगवाएं${proof}</b>
+    <span>WhatsApp पर संपर्क करें</span>
   </a>`;
 }
 
@@ -133,7 +132,8 @@ function fillAdsterra(box, cfg) {
     if (mine && mine.length) return fillSponsor(box, mine);   // दुकान का बैनर सबसे पहले
     const m = mode[slot];
     if (m === "adsterra") return fillAdsterra(box, ADSTERRA.banner);
-    if (m === "house")    return fillHouse(box);
+    // ऊपर वाली पट्टी यही बात पहले से कह रही है — top पर दोबारा मत दिखाओ
+    if (m === "house" && slot !== "top" ) return fillHouse(box);
     /* off — कुछ नहीं */
   });
 })();
