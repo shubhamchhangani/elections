@@ -4,46 +4,68 @@
 
 | जगह | कहाँ | दाम | Adsterra आता है? |
 |---|---|---|---|
-| **top** | सबसे ऊपर, पेज खुलते ही | सबसे महँगा | **नहीं** — सिर्फ़ पैसा देने वाली दुकान के लिए |
+| **top** | सबसे ऊपर, पेज खुलते ही | सबसे महँगा | हाँ |
 | **mid** | नतीजे के ठीक बाद | मध्यम | हाँ |
 | **bottom** | सबसे नीचे | सबसे सस्ता | हाँ |
 
-**नियम:** प्रायोजक का बैनर किसी भी जगह लग सकता है। Adsterra सिर्फ़ `mid` और `bottom`
-भरता है। कोई जगह ख़ाली हो तो वह **दिखती ही नहीं** — कोई ख़ाली डिब्बा नहीं बनता।
+**नियम:** प्रायोजक का बैनर किसी भी जगह लग सकता है। Adsterra का banner अब `top`, `mid`
+और `bottom` तीनों जगह भरता है। कोई key ख़ाली हो तो वह **दिखती ही नहीं** — कोई ख़ाली
+डिब्बा नहीं बनता।
 
-**top पर Adsterra क्यों नहीं:** वहाँ विज्ञापन होने से पेज खुलते ही सबसे पहले वही दिखता है
-और मतपत्र नीचे चला जाता है — लोग वोट दिए बिना लौट जाते हैं। यह जगह ख़ाली रखना
-बेचने में भी काम आता है: *"सबसे ऊपर वाली जगह सिर्फ़ आपकी दुकान के लिए है।"*
+Top ad बंद करना हो तो `slots` से `"top"` हटा दें।
 
 **डेस्कटॉप की बग़ल वाली पट्टियाँ हटा दी गई हैं** — 98% लोग मोबाइल से आते हैं जहाँ
 वे कभी दिखती ही नहीं थीं, और डेस्कटॉप पर पूरा पेज बिगाड़ रही थीं।
 
----
 
 ## Adsterra जोड़ना (~10 मिनट)
 
 1. https://adsterra.com → **Publisher** → Sign up
 2. **Add website**: `https://pokaranchunav.pages.dev`, category **News**
 3. Traffic type: **Mainstream**
-4. **"Boost CPM" — बंद रखें** ← सबसे ज़रूरी सेटिंग
-5. Blocked verticals: **adult, dating, gambling, betting**
-6. एक ad unit बनाएँ — **Banner `320 × 50`**
+4. **"Boost CPM" — बंद रखें** ← अनचाहे creatives कम करने के लिए
+5. Blocked verticals/categories में **adult, dating, gambling, betting, casino,
+   crypto और downloads** block करें।
+6. **Ad quality / moderation** में strictest या family-safe विकल्प चुनें, अगर आपके
+   dashboard में यह setting दिखे।
+7. एक ad unit बनाएँ — **Banner `320 × 50`**
    > Social Bar · Popunder · In-Page Push · Vignette — **कभी नहीं**।
    > अश्लील विज्ञापन की सारी शिकायतें इन्हीं format की हैं, banner की नहीं।
-7. दोनों keys `src/ads.js` में डालें। **`host` भी देख लें** — यह हर Adsterra
+7. key `src/ads.js` में डालें। **`host` भी देख लें** — यह हर Adsterra
    खाते का अलग होता है, GET CODE वाले `<script src="...">` से लें:
    ```js
    const ADSTERRA = {
      host:   "https://www.highrevenueformat.com",
      banner: { key: "आपकी-320x50-key", w: 320, h: 50 },
-     slots:  ["mid", "bottom"],
+   slots:  ["top", "mid", "bottom"],
    };
    ```
 8. `npm run build` → commit → push
-9. Payout: **Paxum ($5)** चुनें — यही आपकी कमाई की सीमा में आता है
+10. Payout: **Paxum ($5)** चुनें — यही आपकी कमाई की सीमा में आता है
 
 **लगाने के बाद पहले 48 घंटे दिन में 2-3 बार अपने फ़ोन पर साइट खोलकर देखें।**
 कुछ भी आपत्तिजनक दिखे तो key हटाकर `""` कर दें और push — 1 मिनट में गायब।
+
+## Vulgar ad तुरंत कैसे हटाएँ
+
+Adsterra का creative बाहरी iframe में आता है, इसलिए website code उसके अंदर का ad
+पढ़कर reliably filter नहीं कर सकता। रोकने का सही तरीका Adsterra dashboard है:
+
+1. **Websites → अपनी site → Ad units** में जाकर संबंधित banner खोलें।
+2. **Ad quality / Brand safety / Blocked categories** में adult, dating, gambling,
+   betting और casino block करें।
+3. जो ad दिखा उसका screenshot, landing URL और ad unit/key नोट करके **Report ad / Report
+   abuse** करें और उसी ad को block-list में डालें।
+4. अगर तुरंत आपत्तिजनक ad दिख रहा हो तो `src/ads.js` में key को `""` कर दें:
+   ```js
+   banner: { key: "", w: 320, h: 50 },
+   ```
+   फिर `npm run build` और deploy करें। तीनों जगह ads बंद हो जाएँगे।
+5. Popunder, Social Bar, In-Page Push और Vignette चालू न करें; ये banner की तुलना में
+   vulgar या disruptive creatives दिखाने की अधिक संभावना रखते हैं।
+
+Categories block करने के बाद भी नया ad दिखे तो उसे report करें और key अस्थायी रूप से
+ख़ाली कर दें। केवल code से बाहरी ad network के creative की पूरी guarantee संभव नहीं है।
 
 ---
 
