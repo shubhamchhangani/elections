@@ -1,44 +1,48 @@
 import { SUPABASE_URL, SUPABASE_ANON } from "./config.js";
 
 /* ═══════════════════════════════════════════════════════════════
-   विज्ञापन — 3 जगहें: top · mid · bottom
+   विज्ञापन — slot map:
+     global  → Adcash AutoTag (पूरे पन्ने पर, ख़ुद जगह ढूँढ़ता है)
+     top     → Display 728×90  (zone 12110694) — शीर्षक से पहले
+     after   → Display 336×280 (zone 12110682) — ballot के ठीक बाद
+     mid     → Video Slider    (zone 12110890)  — शेयर बटन के नीचे
+     bottom  → Display 468×60  (zone 12110702) — पेज के अंत में
+     stick   → Display 468×60  (zone 12110702) — नीचे चिपकी पट्टी
+     footer  → DB से जितने चाहें, lazy-load
 
-   नियम: प्रायोजक (दुकान) का बैनर किसी भी जगह लग सकता है।
-         बाक़ी जगहें /admin से चिपकाए गए नेटवर्क कोड से भरती हैं।
-
-  top पर भी वही सुरक्षित banner format इस्तेमाल होता है; popunder या social bar नहीं।
+   UX नियम:
+   • IntersectionObserver — ad तभी लोड हो जब user वहाँ पहुँचे
+   • sticky bar 1.5s बाद — पहले content, बाद में ad
+   • Adcash library एक बार — बार-बार नहीं
+   • DB से code आए तो वही चले, नहीं तो hardcoded Adcash
    ═══════════════════════════════════════════════════════════════ */
 
-/* ── 1. प्रायोजक — दुकानों के बैनर। पैसा मिलते ही यहाँ जोड़ें ──
-  slot:  "top"    सबसे ऊपर, सबसे महँगा
-          "mid"    नतीजे के ठीक बाद
-          "bottom" सबसे नीचे, सबसे सस्ता
-   एक ही slot में कई दुकानें डालेंगे तो वे बारी-बारी घूमेंगी (हर 8 सेकंड)।
+/* ── Adcash Zone IDs ── */
+const AC = {
+  AUTOTAG: "94xe21fgy4",
+  TOP:     "12110694",
+  AFTER:   "12110682",
+  MID:     "12110890",
+  BOTTOM:  "12110702",
+  STICK:   "12110702",
+};
 
-   ⚠️ किसी प्रत्याशी या राजनीतिक दल का बैनर यहाँ कभी न डालें —
-      चुनाव आयोग के नियम से उसके लिए MCMC का पूर्व-प्रमाणन ज़रूरी है। */
-const SPONSORS = [
-  // सारे बैनर अब /admin से लगते हैं — यहाँ कुछ लिखने की ज़रूरत नहीं।
-  // यह सूची सिर्फ़ आपात स्थिति के लिए है (अगर डेटाबेस जवाब न दे)।
-  // { slot:"top",    img:"/img/sponsors/dukan.png", href:"tel:+91XXXXXXXXXX", alt:"दुकान का नाम" },
-  // { slot:"bottom", img:"/img/sponsors/dukan2.png", href:"https://wa.me/91XXXXXXXXXX", alt:"दूसरी दुकान" },
-];
+/* Hardcoded Adcash templates — /admin के DB code से override होते हैं */
+const acCode = {
+  global: `<script id="aclib" type="text/javascript" src="//acscdn.com/script/aclib.js"></script>
+<script type="text/javascript">aclib.runAutoTag({zoneId:'${AC.AUTOTAG}'});</script>`,
+  top:    `<div><script type="text/javascript">aclib.runBanner({zoneId:'${AC.TOP}'});</script></div>`,
+  after:  `<div><script type="text/javascript">aclib.runBanner({zoneId:'${AC.AFTER}'});</script></div>`,
+  mid:    `<script type="text/javascript">aclib.runVideoSlider({zoneId:'${AC.MID}'});</script>`,
+  bottom: `<div><script type="text/javascript">aclib.runBanner({zoneId:'${AC.BOTTOM}'});</script></div>`,
+  stick:  `<div><script type="text/javascript">aclib.runBanner({zoneId:'${AC.STICK}'});</script></div>`,
+};
 
-/* ── 2. विज्ञापन नेटवर्क — ख़ाली जगहें भरने के लिए ──
-  डैशबोर्ड में एक banner ad unit बनाएँ और उसकी key यहाँ डालें।
-   खाली छोड़ेंगे तो वह जगह बिलकुल नहीं दिखेगी (कोई ख़ाली डिब्बा नहीं)। */
-/* अब हर जगह का नियंत्रण /admin से है (ad_config टेबल)।
-   यह सिर्फ़ आख़िरी सहारा है — अगर डेटाबेस जवाब ही न दे। */
-const FALLBACK_IF_DB_DOWN = { top: "house", mid: "house", bottom: "house" };
+/* ── 1. प्रायोजक बैनर ── */
+const SPONSORS = [];
+const FALLBACK_IF_DB_DOWN = { top:"adsterra", after:"adsterra", mid:"adsterra", bottom:"adsterra", stick:"adsterra", global:"adsterra" };
 
-/* किसी नेटवर्क की key कोड में नहीं रखी जाती। हर जगह का विज्ञापन
-   /admin से चिपकाए गए कोड से चलता है — Adcash, AdSense, कोई भी।
-   कोड ख़ाली हो तो कुछ नहीं दिखता। */
-
-/* ─────────────────────────────────────────────────────────── */
-
-/* डेटाबेस से आए बैनर उसी जगह के हार्डकोड बैनर की जगह ले लेते हैं।
-   यानी /admin से लगाया बैनर हमेशा जीतता है। */
+/* ── DB helpers ── */
 const H = { apikey: SUPABASE_ANON, authorization: "Bearer " + SUPABASE_ANON };
 const get = async (q) => {
   try {
@@ -49,9 +53,10 @@ const get = async (q) => {
   } catch { return null; }
 };
 
-const fromDb  = () => get("sponsors?select=slot,img,href,alt&active=eq.true&order=sort.asc");
+const fromDb    = () => get("sponsors?select=slot,img,href,alt&active=eq.true&order=sort.asc");
 const cfgFromDb = () => get("ad_config?select=slot,fallback,code,height,count");
 
+/* ── sponsor ── */
 const sponsorHtml = s =>
   `<a class="sponsor" href="${s.href}" rel="nofollow sponsored noopener" target="_blank">
      <img src="${s.img}" alt="${s.alt}" loading="lazy"></a>`;
@@ -64,8 +69,7 @@ function fillSponsor(box, list) {
   setInterval(() => { i = (i + 1) % list.length; box.innerHTML = sponsorHtml(list[i]); }, 8000);
 }
 
-/* अपना न्यौता — जब कोई विज्ञापन न हो तो जगह ख़ाली न रहे,
-   बल्कि वहीं से दुकानदार को न्यौता चला जाए */
+/* ── house ad ── */
 const HOUSE_WA = "919079269147";
 let _grand = 0;
 
@@ -93,10 +97,7 @@ function fillHouse(box) {
   </a>`;
 }
 
-
-/* HTML में आए <script> को क्रम से चलाओ — बाहरी वाले के लोड होने का इंतज़ार
-   करके। नेटवर्क का टैग पहले लाइब्रेरी लाता है और फिर उसे बुलाता है; दोनों एक
-   साथ डालने पर दूसरा पहले चल जाता था और "runAutoTag is not a function" आता था। */
+/* ── Script runner ── */
 async function runScripts(host, html) {
   const holder = document.createElement("div");
   holder.innerHTML = html;
@@ -138,7 +139,7 @@ async function runGlobal(html) {
   await runScripts(document.body, html);
 }
 
-/* Adcash की लाइब्रेरी पूरे पन्ने पर एक ही बार */
+/* ── Adcash library — एक बार ── */
 let _lib = null;
 function ensureLib() {
   if (_lib) return _lib;
@@ -155,8 +156,7 @@ function ensureLib() {
   return _lib;
 }
 
-/* विज्ञापन अपनी ही जगह पर बनता है — Adcash का banner उसी <div> के अंदर
-   बनता है जिसमें उसका script होता है, इसलिए इसे iframe में नहीं डाल सकते। */
+/* ── fillCode ── */
 async function fillCode(box, code, h) {
   box.classList.add("has-ad");
   if (h) box.style.minHeight = h + "px";
@@ -174,65 +174,105 @@ function addStickClose(box) {
   box.appendChild(x);
 }
 
+/* ── lazy-load via IntersectionObserver ── */
+function lazyFill(box, code, h, margin = "200px") {
+  const io = new IntersectionObserver(es => {
+    for (const e of es) {
+      if (!e.isIntersecting || e.target._done) continue;
+      e.target._done = true;
+      fillCode(e.target, code, h);
+      io.unobserve(e.target);
+    }
+  }, { rootMargin: margin });
+  io.observe(box);
+}
+
+/* ── slot के लिए code और height resolve करो ── */
+function resolveCode(slot, dbCode) {
+  return dbCode || acCode[slot] || null;
+}
+
+function resolveHeight(slot, dbH) {
+  if (dbH) return dbH;
+  return { top:90, after:280, mid:250, bottom:60, stick:60, footer:260 }[slot] || 0;
+}
+
+/* ══════════════════════════════════════════════════════════════ */
 
 (async () => {
   const [db, cfgRows] = await Promise.all([fromDb(), cfgFromDb(), loadGrand()]);
 
+  /* sponsor map */
   const bySlot = {}, seen = new Set();
   for (const s of SPONSORS) (bySlot[s.slot] ||= []).push(s);
-  for (const s of (db || [])) {                    // /admin वाला बैनर हार्डकोड पर भारी
+  for (const s of (db || [])) {
     if (!seen.has(s.slot)) { bySlot[s.slot] = []; seen.add(s.slot); }
     bySlot[s.slot].push(s);
   }
 
-  const mode = { ...FALLBACK_IF_DB_DOWN }, code = {}, hgt = {}, cnt = {};
+  /* config map */
+  const mode = { ...FALLBACK_IF_DB_DOWN }, dbCodeMap = {}, dbHgtMap = {}, cnt = {};
   for (const r of (cfgRows || [])) {
-    mode[r.slot] = r.fallback;
-    if (r.code) code[r.slot] = r.code;
-    if (r.height) hgt[r.slot] = r.height;
-    cnt[r.slot] = Math.max(1, Math.min(20, r.count || 1));
+    mode[r.slot]     = r.fallback;
+    if (r.code)     dbCodeMap[r.slot] = r.code;
+    if (r.height)   dbHgtMap[r.slot]  = r.height;
+    cnt[r.slot]     = Math.max(1, Math.min(20, r.count || 1));
   }
 
-  /* तलहटी के नीचे कई विज्ञापन — मतपत्र और नतीजों के बहुत नीचे, और
-     तभी लोड होते हैं जब कोई वहाँ तक पहुँचे, ताकि पन्ना धीमा न हो। */
+  /* ── footer — lazy, multiple ── */
   const foot = document.getElementById("footads");
-  if (foot && code.footer && mode.footer !== "off") {
-    const n = cnt.footer || 1;
-    const h = hgt.footer || 260;
-    for (let i = 0; i < n; i++) {
-      const box = document.createElement("div");
-      box.className = "ad ad-footer";
-      box.dataset.ad = "footer";
-      foot.appendChild(box);
-    }
-    const io = new IntersectionObserver(es => {
-      for (const e of es) {
-        if (!e.isIntersecting || e.target._done) continue;
-        e.target._done = true;
-        fillCode(e.target, code.footer, h);
-        io.unobserve(e.target);
+  if (foot) {
+    const footCode = resolveCode("footer", dbCodeMap.footer);
+    if (footCode && mode.footer !== "off") {
+      const n = cnt.footer || 1;
+      const h = resolveHeight("footer", dbHgtMap.footer);
+      for (let i = 0; i < n; i++) {
+        const box = document.createElement("div");
+        box.className = "ad ad-footer"; box.dataset.ad = "footer";
+        foot.appendChild(box);
+        lazyFill(box, footCode, h, "300px");
       }
-    }, { rootMargin: "300px" });
-    [...foot.children].forEach(el => io.observe(el));
+    }
   }
 
-  if (mode.global !== "off" && code.global) runGlobal(code.global);   // जान-बूझकर await नहीं — विज्ञापन पन्ने को रोके नहीं
+  /* ── global AutoTag ── */
+  const globalCode = resolveCode("global", dbCodeMap.global);
+  if (mode.global !== "off" && globalCode) runGlobal(globalCode);
 
+  /* ── बाक़ी slots (top, after, mid, bottom) ── */
   document.querySelectorAll("[data-ad]").forEach(box => {
     const slot = box.dataset.ad;
+    if (slot === "stick" || slot === "footer") return;
+
+    /* sponsor सबसे पहले */
     const mine = bySlot[slot];
-    if (mine && mine.length) return fillSponsor(box, mine);   // दुकान का बैनर सबसे पहले
+    if (mine && mine.length) return fillSponsor(box, mine);
+
     const m = mode[slot];
-    // नीचे "adsterra" सिर्फ़ डेटाबेस में सहेजी गई सेटिंग का पुराना नाम है
-    // (मतलब: "विज्ञापन दिखाएँ")। इसका Adsterra से कोई लेना-देना नहीं —
-    // जो चलेगा वह /admin में चिपकाया गया कोड है।
-    if (m === "adsterra") {
-      if (!code[slot]) return;                  // कोड नहीं तो कुछ नहीं
-      const h = hgt[slot] || (["mid","bottom","after","footer"].includes(slot) ? 260 : 60);
-      return fillCode(box, code[slot], h);
+    if (m === "off") return;
+
+    if (m === "adsterra" || m === "adcash") {
+      const code = resolveCode(slot, dbCodeMap[slot]);
+      if (!code) return;
+      const h = resolveHeight(slot, dbHgtMap[slot]);
+      /* top — above the fold, तुरंत */
+      if (slot === "top") return fillCode(box, code, h);
+      /* बाक़ी — lazy */
+      return lazyFill(box, code, h);
     }
-    // ऊपर वाली पट्टी यही बात पहले से कह रही है — top पर दोबारा मत दिखाओ
+
     if (m === "house" && slot !== "top" && slot !== "stick") return fillHouse(box);
-    /* off — कुछ नहीं */
   });
+
+  /* ── sticky bar — 1.5s बाद (UX: content पहले) ── */
+  const stickBox = document.querySelector(".stick[data-ad='stick']");
+  if (stickBox && mode.stick !== "off") {
+    const mine = bySlot.stick;
+    if (mine && mine.length) {
+      setTimeout(() => fillSponsor(stickBox, mine), 1500);
+    } else {
+      const code = resolveCode("stick", dbCodeMap.stick);
+      if (code) setTimeout(() => fillCode(stickBox, code, resolveHeight("stick", dbHgtMap.stick)), 1500);
+    }
+  }
 })();

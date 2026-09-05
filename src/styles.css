@@ -297,13 +297,45 @@ a{color:var(--evm)}
 /* ख़ाली जगह कुछ नहीं दिखाती — भरने पर ही जगह लेती है */
 .ad{display:none}
 .ad.has-ad,.ad.has-sponsor,.ad.has-house{
-  display:block;margin:18px 0;overflow:hidden;
+  display:block;margin:18px 0;overflow:visible;
 }
 .ad.has-ad{
   display:flex;align-items:center;justify-content:center;
-  border:1px solid var(--rule-soft);background:#F5F3EE;padding:5px 0;
+  border:1px solid var(--rule-soft);background:#F5F3EE;
+  padding:4px 0;overflow:visible;
+  /* Adcash ads अपना size खुद set करते हैं — min-height JS से आता है */
 }
-.ad-top.has-ad,.ad-top.has-sponsor,.ad-top.has-house{margin:14px 0 4px}
+.ad-top.has-ad,.ad-top.has-sponsor,.ad-top.has-house{
+  margin:10px 0 6px;
+}
+
+/* after slot — ballot के बाद 336x280, center में */
+.ad-after.has-ad{
+  justify-content:center;
+  min-height:280px;
+}
+
+/* mid slot — Video Slider को overflow चाहिए */
+.ad-mid.has-ad{
+  overflow:visible;
+  min-height:250px;
+}
+
+/* bottom slot — 468x60 footer banner */
+.ad-bottom.has-ad{
+  min-height:60px;
+}
+
+/* विज्ञापन का लेबल — UX: user को पता रहे यह ad है */
+.ad.has-ad::before,.ad.has-sponsor::before{
+  content:"विज्ञापन";
+  position:absolute;
+  font-size:9px;font-weight:600;letter-spacing:.08em;
+  color:var(--ink-soft);opacity:.6;
+  top:2px;right:6px;
+  pointer-events:none;
+}
+.ad{position:relative}
 
 /* दुकान का बैनर — पूरी चौड़ाई, अनुपात अपने आप */
 .ad.has-sponsor{border:1.5px solid var(--rule);background:var(--paper-2)}
@@ -329,7 +361,10 @@ a{color:var(--evm)}
   position:fixed;left:0;right:0;bottom:0;z-index:40;
   background:#F5F3EE;border-top:1px solid var(--rule);
   padding:3px 0;min-height:56px;
+  /* smooth slide-in */
+  animation:stickIn .35s ease-out;
 }
+@keyframes stickIn{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .stick .close{
   position:absolute;top:-11px;right:6px;width:22px;height:22px;
   border:1px solid var(--rule);border-radius:50%;background:#fff;
@@ -337,6 +372,8 @@ a{color:var(--evm)}
   display:flex;align-items:center;justify-content:center;padding:0;
 }
 body.has-stick{padding-bottom:62px}
+
+
 
 /* ── तलहटी ───────────────────────────────────── */
 footer{
