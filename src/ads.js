@@ -69,15 +69,33 @@ function fillSponsor(box, list) {
 /* अपना विज्ञापन — जब Adsterra बंद हो या key न हो, तो जगह ख़ाली न रहे,
    बल्कि वहीं से दुकानदार को न्यौता चला जाए */
 const HOUSE_WA = "919079269147";
+let _grand = 0;
+
+async function loadGrand() {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_totals`, {
+      method: "POST", headers: { ...H, "content-type": "application/json" }, body: "{}"
+    });
+    if (!r.ok) return;
+    const d = await r.json();
+    _grand = (d && d.grand) || 0;
+  } catch {}
+}
+
 function fillHouse(box) {
   box.classList.add("has-house");
+  const proof = _grand >= 100
+    ? `<i>अब तक <b>${_grand.toLocaleString("en-IN")}</b> लोग वोट दे चुके हैं</i>`
+    : "";
   box.innerHTML = `<a class="house" href="https://wa.me/${HOUSE_WA}?text=${
     encodeURIComponent("पोकरण चुनाव वेबसाइट पर विज्ञापन के बारे में जानकारी चाहिए")
   }" rel="noopener" target="_blank">
     <b>अपने व्यवसाय का विज्ञापन यहाँ लगवाएं</b>
-    <span>पोकरण के हज़ारों लोग रोज़ देख रहे हैं · WhatsApp करें</span>
+    ${proof}
+    <span>दुकान · कोचिंग · शोरूम · होटल — WhatsApp पर संपर्क करें</span>
   </a>`;
 }
+
 
 function fillAdsterra(box, cfg) {
   if (!cfg.key) return fillHouse(box);
