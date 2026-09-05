@@ -308,6 +308,9 @@ a{color:var(--evm)}
 .ad-top.has-ad,.ad-top.has-sponsor,.ad-top.has-house{
   margin:10px 0 6px;
 }
+/* mobile: top slot = 336×280, so min-height 280px */
+@media(max-width:479px){.ad-top.has-ad{min-height:280px !important}}
+
 
 /* after slot — ballot के बाद 336x280, center में */
 .ad-after.has-ad{
