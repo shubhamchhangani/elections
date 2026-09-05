@@ -24,6 +24,10 @@ const SPONSORS = [
 /* ── 2. Adsterra — ख़ाली जगहें भरने के लिए ──
   डैशबोर्ड में एक banner ad unit बनाएँ और उसकी key यहाँ डालें।
    खाली छोड़ेंगे तो वह जगह बिलकुल नहीं दिखेगी (कोई ख़ाली डिब्बा नहीं)। */
+/* ⚠️ आपातकालीन स्विच — कोई गंदा विज्ञापन दिखे तो इसे false करके push करें।
+   Adsterra तुरंत बंद, और उसकी जगह आपका अपना "विज्ञापन यहाँ लगवाएँ" वाला बॉक्स। */
+const ADSTERRA_ON = true;
+
 const ADSTERRA = {
   // यह domain हर Adsterra खाते का अलग होता है — GET CODE वाले script src से लें
   host:   "https://www.highrevenueformat.com",
@@ -48,8 +52,21 @@ function fillSponsor(box, list) {
   setInterval(() => { i = (i + 1) % list.length; box.innerHTML = sponsorHtml(list[i]); }, 8000);
 }
 
+/* अपना विज्ञापन — जब Adsterra बंद हो या key न हो, तो जगह ख़ाली न रहे,
+   बल्कि वहीं से दुकानदार को न्यौता चला जाए */
+const HOUSE_WA = "919079269147";
+function fillHouse(box) {
+  box.classList.add("has-house");
+  box.innerHTML = `<a class="house" href="https://wa.me/${HOUSE_WA}?text=${
+    encodeURIComponent("पोकरण चुनाव वेबसाइट पर विज्ञापन के बारे में जानकारी चाहिए")
+  }" rel="noopener" target="_blank">
+    <b>अपने व्यवसाय का विज्ञापन यहाँ</b>
+    <span>पोकरण के हज़ारों लोग रोज़ देख रहे हैं · WhatsApp करें</span>
+  </a>`;
+}
+
 function fillAdsterra(box, cfg) {
-  if (!cfg.key) return;                       // key नहीं तो जगह छिपी रहे
+  if (!ADSTERRA_ON || !cfg.key) return fillHouse(box);
   box.classList.add("has-ad");
   const f = document.createElement("iframe");
   f.style.cssText = `width:${cfg.w}px;height:${cfg.h}px;border:0;display:block`;
