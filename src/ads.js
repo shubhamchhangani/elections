@@ -25,6 +25,7 @@ const AC = {
   MID:     "12110890",
   BOTTOM:  "12110702",
   STICK:   "12110702",
+  FOOTER:  "12110682",   // 336×280 — footer में भी यही चलेगा
 };
 
 /* Hardcoded Adcash templates — /admin के DB code से override होते हैं */
@@ -36,11 +37,15 @@ const acCode = {
   mid:    `<script type="text/javascript">aclib.runVideoSlider({zoneId:'${AC.MID}'});</script>`,
   bottom: `<div><script type="text/javascript">aclib.runBanner({zoneId:'${AC.BOTTOM}'});</script></div>`,
   stick:  `<div><script type="text/javascript">aclib.runBanner({zoneId:'${AC.STICK}'});</script></div>`,
+  footer: `<div><script type="text/javascript">aclib.runBanner({zoneId:'${AC.FOOTER}'});</script></div>`,
 };
+
+/* footer mein kitne ads dikhein — DB se override, default 5 */
+const FOOTER_COUNT_DEFAULT = 5;
 
 /* ── 1. प्रायोजक बैनर ── */
 const SPONSORS = [];
-const FALLBACK_IF_DB_DOWN = { top:"adsterra", after:"adsterra", mid:"adsterra", bottom:"adsterra", stick:"adsterra", global:"adsterra" };
+const FALLBACK_IF_DB_DOWN = { top:"adsterra", after:"adsterra", mid:"adsterra", bottom:"adsterra", stick:"adsterra", footer:"adsterra", global:"adsterra" };
 
 /* ── DB helpers ── */
 const H = { apikey: SUPABASE_ANON, authorization: "Bearer " + SUPABASE_ANON };
@@ -224,7 +229,7 @@ function resolveHeight(slot, dbH) {
   if (foot) {
     const footCode = resolveCode("footer", dbCodeMap.footer);
     if (footCode && mode.footer !== "off") {
-      const n = cnt.footer || 1;
+      const n = cnt.footer || FOOTER_COUNT_DEFAULT;
       const h = resolveHeight("footer", dbHgtMap.footer);
       for (let i = 0; i < n; i++) {
         const box = document.createElement("div");
