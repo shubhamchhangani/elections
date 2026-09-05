@@ -296,13 +296,28 @@ a{color:var(--evm)}
 }
 .note.warn{border-right-color:var(--lamp);background:#FBF1F1}
 
-/* ── विज्ञापन ────────────────────────────────── */
-.ad{
-  margin:20px 0;min-height:60px;display:flex;align-items:center;justify-content:center;
-  border:1px dashed var(--rule-soft);background:#F5F3EE;overflow:hidden;
+/* ── विज्ञापन ─────────────────────────────────────────── */
+/* ख़ाली जगह कुछ नहीं दिखाती — भरने पर ही जगह लेती है */
+.ad{display:none}
+.ad.has-ad,.ad.has-sponsor,.ad.has-house{
+  display:block;margin:18px 0;overflow:hidden;
 }
-.ad:empty::after{content:"विज्ञापन";font-size:11px;color:#A79E90}
-.sponsor{display:block;border:1.5px solid var(--rule);margin:0 0 10px}
+.ad.has-ad{
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--rule-soft);background:#F5F3EE;padding:5px 0;
+}
+.ad-top.has-ad,.ad-top.has-sponsor,.ad-top.has-house{margin:14px 0 4px}
+
+/* दुकान का बैनर — पूरी चौड़ाई, अनुपात अपने आप */
+.ad.has-sponsor{border:1.5px solid var(--rule);background:var(--paper-2)}
+.sponsor{display:block;width:100%;line-height:0}
+.sponsor img{width:100%;height:auto;display:block}
+
+/* अपना न्यौता — जब कोई प्रायोजक न हो */
+.ad.has-house{border:1.5px dashed var(--rule-soft);background:#FCFBF7}
+.house{display:block;width:100%;padding:13px 14px;text-decoration:none;text-align:center}
+.house b{display:block;font-family:"Martel",Georgia,serif;font-size:16px;color:var(--ink)}
+.house span{display:block;font-size:12.5px;color:var(--ink-soft);margin-top:2px}
 
 /* ── तलहटी ───────────────────────────────────── */
 footer{
