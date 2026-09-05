@@ -5,10 +5,13 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 const $  = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 
-const SLOTS = { global: "पूरे पेज पर (AutoTag)", top: "सबसे ऊपर", after: "मतपत्र के ठीक बाद",
-                mid: "बीच में", bottom: "सबसे नीचे", footer: "तलहटी के नीचे",
-                stick: "नीचे चिपकी पट्टी" };
-const ORDER = ["global","top","after","mid","bottom","footer","stick"];
+const SLOTS = {
+  after:  "मतपत्र के ठीक बाद",
+  mid:    "बीच में",
+  bottom: "सबसे नीचे",
+  footer: "तलहटी के नीचे (एक से ज़्यादा)",
+};
+const ORDER = ["after","mid","bottom","footer"];
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
 
 function say(msg, bad) {
@@ -28,7 +31,7 @@ function say(msg, bad) {
 function applySession(session) {
   $("#login").hidden = !!session;
   $("#panel").hidden = !session;
-  if (session) { $("#who").textContent = session.user.email; loadStats(); loadTraffic(); load(); loadCfg(); }
+  if (session) { $("#who").textContent = session.user.email; loadStats(); loadTraffic(); load(); }
 }
 
 $("#loginForm").addEventListener("submit", async e => {
@@ -140,7 +143,7 @@ async function loadStats() {
     <p class="dims">लाल रंग वाले वार्ड में 8 से कम वोट हैं — वहाँ लिंक और भेजें।</p>`;
 }
 
-$("#reload").addEventListener("click", () => { loadStats(); loadTraffic(); load(); loadCfg(); });
+$("#reload").addEventListener("click", () => { loadStats(); loadTraffic(); load(); });
 
 /* ── कितने लोग आए ─────────────────────────────────────────── */
 const REF_NAAM = { whatsapp:"WhatsApp", google:"Google", direct:"सीधे लिंक से",

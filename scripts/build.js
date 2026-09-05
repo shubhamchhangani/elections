@@ -474,9 +474,10 @@ window.PARTIES = ${JSON.stringify(Object.fromEntries(Object.entries(D.parties).m
 
       <label>जगह
         <select id="slot" required>
-          <option value="bottom">सबसे नीचे — सबसे सस्ता</option>
-          <option value="mid">बीच में — मध्यम</option>
-          <option value="top">सबसे ऊपर — सबसे महँगा</option>
+          <option value="after">मतपत्र के ठीक बाद</option>
+          <option value="mid">बीच में</option>
+          <option value="bottom">सबसे नीचे</option>
+          <option value="footer">तलहटी के नीचे (footer)</option>
         </select>
       </label>
       <label>टैप करने पर कहाँ जाए
