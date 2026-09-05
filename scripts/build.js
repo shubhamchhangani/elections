@@ -71,7 +71,7 @@ ${schema}
 <header class="masthead">
   <div class="wrap">
     <b><a href="/">पोकरण नगर पालिका<br>चुनाव 2026</a></b>
-    <small>जनता की राय</small>
+    <small>जनता की राय<i>शुभम छांगाणी</i></small>
   </div>
 </header>
 
@@ -101,6 +101,8 @@ ${body}
        <a href="https://wa.me/${WA}?text=${encodeURIComponent("पोकरण चुनाव वेबसाइट पर विज्ञापन के बारे में जानकारी चाहिए")}">WhatsApp पर संपर्क करें</a></p>
     <p><a href="/">सभी वार्ड</a> · <a href="/adhyaksh">अध्यक्ष</a> · <a href="/adhyaksh-kaise-chunte-hain">अध्यक्ष कैसे चुना जाता है?</a> · <a href="/gopniyata-niti">गोपनीयता नीति</a></p>
     <p style="font-size:12.5px">मतदान 09 सितम्बर 2026 · मतगणना 14 सितम्बर 2026</p>
+    <p class="by">यह वेबसाइट बनाई है — <b>शुभम छांगाणी</b><br>
+      <a href="https://wa.me/${WA}">WhatsApp पर संपर्क करें</a></p>
   </div>
 </footer>
 

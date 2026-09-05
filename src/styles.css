@@ -44,7 +44,8 @@ a{color:var(--evm)}
   font-family:"Martel",Georgia,serif;font-weight:800;
   font-size:16px;line-height:1.25;letter-spacing:.01em;
 }
-.masthead small{font-size:12px;color:#C9C3B8;white-space:nowrap}
+.masthead small{font-size:12px;color:#C9C3B8;white-space:nowrap;text-align:left;line-height:1.35}
+.masthead small i{display:block;font-style:normal;font-size:11px;color:#8C877E;letter-spacing:.01em}
 .masthead a{color:#fff;text-decoration:none}
 
 /* ── स्थिति की पट्टी (live / बंद / नतीजे) ────── */
@@ -310,6 +311,12 @@ footer{
 }
 footer p{margin:0 0 9px;max-width:60ch}
 footer b{color:var(--ink)}
+footer .by{
+  border-top:1px solid var(--rule-soft);padding-top:11px;margin-top:14px;
+  font-size:13px;line-height:1.6;
+}
+footer .by b{font-family:"Martel",Georgia,serif;font-size:14.5px}
+
 footer .disc{border:1px solid var(--rule-soft);background:#F5F3EE;padding:11px 12px;margin:0 0 12px}
 footer a{color:var(--evm-dark)}
 
