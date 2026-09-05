@@ -26,10 +26,12 @@
    - `160 × 600` — डेस्कटॉप की बग़ल वाली पट्टियों के लिए
    > Social Bar · Popunder · In-Page Push · Vignette — **कभी नहीं**।
    > अश्लील विज्ञापन की सारी शिकायतें इन्हीं format की हैं, banner की नहीं।
-7. दोनों keys `src/ads.js` में डालें:
+7. दोनों keys `src/ads.js` में डालें। **`host` भी देख लें** — यह हर Adsterra
+   खाते का अलग होता है, GET CODE वाले `<script src="...">` से लें:
    ```js
    const ADSTERRA = {
-     banner: { key: "आपकी-320x50-key", w: 320, h: 50  },
+     host:   "https://www.highrevenueformat.com",
+     banner: { key: "आपकी-320x50-key",  w: 320, h: 50  },
      side:   { key: "आपकी-160x600-key", w: 160, h: 600 },
    };
    ```

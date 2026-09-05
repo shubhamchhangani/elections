@@ -26,8 +26,10 @@ const SPONSORS = [
    डैशबोर्ड में दो ad unit बनाएँ और उनकी key यहाँ डालें।
    खाली छोड़ेंगे तो वह जगह बिलकुल नहीं दिखेगी (कोई ख़ाली डिब्बा नहीं)। */
 const ADSTERRA = {
-  banner: { key: "", w: 320, h: 50  },   // top / mid / bottom के लिए
-  side:   { key: "", w: 160, h: 600 },   // डेस्कटॉप की बग़ल वाली पट्टियों के लिए
+  // यह domain हर Adsterra खाते का अलग होता है — GET CODE वाले script src से लें
+  host:   "https://www.highrevenueformat.com",
+  banner: { key: "5e99d15e87d709158409d34747ba1b34", w: 320, h: 50  },  // top / mid / bottom
+  side:   { key: "fc710b3acf3f5c424958044ec52129f4", w: 160, h: 600 },  // डेस्कटॉप की बग़ल वाली पट्टियाँ
 };
 
 /* ─────────────────────────────────────────────────────────── */
@@ -60,7 +62,7 @@ function fillAdsterra(box, cfg) {
   d.open();
   d.write(`<body style="margin:0">
 <script>atOptions={'key':'${cfg.key}','format':'iframe','height':${cfg.h},'width':${cfg.w},'params':{}};<\/script>
-<script src="//www.highperformanceformat.com/${cfg.key}/invoke.js"><\/script></body>`);
+<script src="${ADSTERRA.host}/${cfg.key}/invoke.js"><\/script></body>`);
   d.close();
 }
 
