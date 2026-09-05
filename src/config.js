@@ -9,7 +9,7 @@ export const TURNSTILE_KEY = "0x4AAAAAAEootxb0JN46vQM9";
 export const VOTE_FN = "smart-processor";
 
 // Google Analytics 4 का Measurement ID (G-XXXXXXXXXX)। खाली छोड़ेंगे तो GA बंद रहेगा।
-export const GA_ID = "";
+export const GA_ID = "G-917WVFYSRS";
 
 export const SITE    = "https://pokaranchunav.pages.dev";
 export const WA      = "919079269147";

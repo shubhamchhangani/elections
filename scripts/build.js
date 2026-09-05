@@ -60,6 +60,7 @@ ${schema}
 <div class="status frozen hide" data-phase="frozen">मतदान बंद · नतीजे 9 सितम्बर शाम 6 बजे</div>
 <div class="status result hide" data-phase="result">अंतिम नतीजे · मतदान समाप्त</div>
 
+${rails}
 <main class="wrap">
 ${body}
 </main>
@@ -137,7 +138,13 @@ const shareBtns = `
   </button>
   <button class="btn ghost" data-share="any" type="button">लिंक कॉपी करें</button>`;
 
-const adSlot = `<div class="ad" data-ad></div>`;
+const adSlot = (slot, label) =>
+  `<div class="ad ad-${slot}" data-ad="${slot}"${label ? ` data-label="${label}"` : ""}></div>`;
+
+// डेस्कटॉप की बग़ल वाली पट्टियाँ — 1100px से चौड़ी स्क्रीन पर ही दिखती हैं
+const rails = `
+<aside class="rail rail-l" data-ad="left"></aside>
+<aside class="rail rail-r" data-ad="right"></aside>`;
 
 /* ── पृष्ठ बनाना ─────────────────────────────────────────────── */
 if (existsSync(OUT)) rmSync(OUT, { recursive: true });
@@ -165,6 +172,8 @@ const P = D.parties;
       "@context":"https://schema.org","@type":"WebSite","name":"पोकरण चुनाव 2026 — जनता की राय",
       "url":SITE,"inLanguage":"hi-IN"})}</script>`,
     body: `
+  ${adSlot("top")}
+
   <div class="head">
     <h1>आपके वार्ड में कौन जीत रहा है?</h1>
     <p class="kshetra">पोकरण नगर पालिका के सभी 25 वार्ड · 74 प्रत्याशी · अपना वार्ड चुनें</p>
@@ -174,7 +183,7 @@ const P = D.parties;
     ${tiles}
   </div>
 
-  ${adSlot}
+  ${adSlot("mid")}
 
   <div class="sec">
     <h2>अध्यक्ष किस पार्टी का बनेगा?</h2>
@@ -200,7 +209,7 @@ const P = D.parties;
   </div>
 
   ${shareBtns}
-  ${adSlot}`
+  ${adSlot("bottom")}`
   }));
 }
 
@@ -228,6 +237,8 @@ for (const w of D.wards) {
       "itemListElement":w.pratyashi.map(p=>({"@type":"ListItem","position":p.n,
         "item":{"@type":"Person","name":p.naam,"affiliation":P[p.dal].naam}}))})}</script>`,
     body: `
+  ${adSlot("top")}
+
   <div class="head">
     <h1>वार्ड ${dev(w.ward)}</h1>
     <p class="kshetra">${esc(w.kshetra)}</p>
@@ -241,7 +252,7 @@ for (const w of D.wards) {
   ${ballot(`वार्ड ${dev(w.ward)} · ${dev(w.pratyashi.length)} प्रत्याशी`, rows)}
 
   ${shareBtns}
-  ${adSlot}
+  ${adSlot("mid")}
 
   <div class="sec">
     <h2>वार्ड ${dev(w.ward)} के प्रत्याशी</h2>
@@ -257,7 +268,9 @@ for (const w of D.wards) {
       ${D.wards.map(x => `<a href="/ward-${x.ward}"${x.ward===w.ward?' style="background:#000;color:#fff"':''}><span>${dev(x.ward)}</span><small>वार्ड</small></a>`).join("\n      ")}
     </div>
     <a class="btn ghost" href="/adhyaksh">अध्यक्ष किस पार्टी का बनेगा?</a>
-  </div>`
+  </div>
+
+  ${adSlot("bottom")}`
   }));
 }
 
@@ -287,6 +300,8 @@ for (const w of D.wards) {
           desc: "भाजपा, कांग्रेस या निर्दलीय — आपकी क्या राय है? एक टैप में वोट दें।",
           img: "/og/adhyaksh.png" },
     body: `
+  ${adSlot("top")}
+
   <div class="head">
     <h1>अध्यक्ष किस पार्टी का बनेगा?</h1>
     <p class="kshetra">25 वार्डों में जिस दल के सबसे ज़्यादा पार्षद जीतेंगे, अध्यक्ष उसी दल का बनेगा।</p>
@@ -300,7 +315,7 @@ for (const w of D.wards) {
   ${ballot("पूरी नगर पालिका · 3 विकल्प", rows)}
 
   ${shareBtns}
-  ${adSlot}
+  ${adSlot("mid")}
 
   <div class="note">
     <b>ध्यान दें:</b> अध्यक्ष का चुनाव जनता सीधे नहीं करती। 09 सितम्बर को आप सिर्फ़ अपना वार्ड पार्षद चुनते हैं।
@@ -313,7 +328,9 @@ for (const w of D.wards) {
     <div class="grid">
       ${D.wards.map(x => `<a href="/ward-${x.ward}"><span>${dev(x.ward)}</span><small>वार्ड</small></a>`).join("\n      ")}
     </div>
-  </div>`
+  </div>
+
+  ${adSlot("bottom")}`
   }));
 }
 
@@ -357,7 +374,7 @@ write("adhyaksh-kaise-chunte-hain.html", page({
     <a class="btn ghost" href="/">अपना वार्ड चुनें</a>
   </div>
 
-  ${adSlot}`
+  ${adSlot("bottom")}`
 }));
 
 /* गोपनीयता नीति — Turnstile के invisible mode की शर्त, और

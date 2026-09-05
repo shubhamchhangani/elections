@@ -156,18 +156,9 @@ repo में पहले से मौजूद हैं। डिज़ा�
 
 ---
 
-## 8️⃣ Adsterra (~10 मिनट, बाद में भी चलेगा)
+## 8️⃣ विज्ञापन
 
-1. https://adsterra.com → **Publisher** → Sign up
-2. Add website: `https://pokaranchunav.pages.dev`, category **News**
-3. Traffic type: **Mainstream**
-4. **"Boost CPM" — बंद रखें** ← सबसे ज़रूरी
-5. Blocked verticals: **adult, dating, gambling, betting**
-6. Ad unit: **Banner 320×50** या Native Banner. **Social Bar / Popunder / In-Page Push कभी नहीं**
-7. key को `src/ads.js` की `ADSTERRA_KEY` में डालें → build → push
-8. Payout: **Paxum ($5)** — यही आपकी कमाई की सीमा में आता है
-9. पहले 48 घंटे दिन में 2-3 बार फ़ोन पर साइट खोलकर देखें कि क्या दिख रहा है।
-   कुछ भी आपत्तिजनक हो तो `ADSTERRA_KEY = ""` करके push — 1 मिनट में हट जाएगा।
+Adsterra और दुकानों के बैनर — पूरी जानकारी `docs/VIGYAPAN.md` में।
 
 ---
 

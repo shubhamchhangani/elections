@@ -1,37 +1,72 @@
-/* विज्ञापन — Adsterra (सिर्फ़ Banner / Native Banner)
-   ⚠️ Adsterra डैशबोर्ड में ज़रूरी सेटिंग:
-      Traffic type: Mainstream · "Boost CPM": OFF
-      Blocked verticals: adult, dating, gambling, betting
-      कभी नहीं: Social Bar, Popunder, In-Page Push, Vignette
-   नीचे ADSTERRA_KEY में अपनी key डालें, या खाली छोड़ दें (तब कोई विज्ञापन नहीं दिखेगा)। */
+/* ═══════════════════════════════════════════════════════════════
+   विज्ञापन — 5 जगहें: top · mid · bottom · left · right
+   left/right सिर्फ़ 1100px से चौड़ी स्क्रीन (डेस्कटॉप) पर दिखती हैं।
 
-const ADSTERRA_KEY = "";          // उदा. "a1b2c3d4e5f6..."
-const AD_W = 320, AD_H = 50;
+   नियम: जिस जगह पर प्रायोजक (दुकान) होगा वहाँ उसी का बैनर।
+         जो जगह ख़ाली रहेगी वहाँ Adsterra अपने आप भर देगा।
+   ═══════════════════════════════════════════════════════════════ */
 
-/* स्थानीय प्रायोजक — सीधे यहाँ जोड़ें। हर आइटम एक दुकान।
-   प्रत्याशी या राजनीतिक दल का विज्ञापन यहाँ कभी न डालें (चुनाव आयोग: MCMC पूर्व-प्रमाणन अनिवार्य)। */
+/* ── 1. प्रायोजक — दुकानों के बैनर। पैसा मिलते ही यहाँ जोड़ें ──
+   slot:  "top"    सबसे ऊपर, सबसे महँगा
+          "left"   डेस्कटॉप बाईं पट्टी
+          "right"  डेस्कटॉप दाईं पट्टी
+          "mid"    बीच में
+          "bottom" सबसे नीचे, सबसे सस्ता
+   एक ही slot में कई दुकानें डालेंगे तो वे बारी-बारी घूमेंगी (हर 8 सेकंड)।
+
+   ⚠️ किसी प्रत्याशी या राजनीतिक दल का बैनर यहाँ कभी न डालें —
+      चुनाव आयोग के नियम से उसके लिए MCMC का पूर्व-प्रमाणन ज़रूरी है। */
 const SPONSORS = [
-  // { img: "/img/sponsors/dukan1.png", href: "https://wa.me/91XXXXXXXXXX", alt: "दुकान का नाम" },
+  // { slot:"top",    img:"/img/sponsors/dukan1.png", href:"https://wa.me/91XXXXXXXXXX", alt:"दुकान का नाम" },
+  // { slot:"mid",    img:"/img/sponsors/dukan2.png", href:"tel:+91XXXXXXXXXX",          alt:"दूसरी दुकान" },
+  // { slot:"bottom", img:"/img/sponsors/dukan3.png", href:"https://...",                alt:"तीसरी दुकान" },
 ];
 
-document.querySelectorAll("[data-ad]").forEach((slot, i) => {
-  const s = SPONSORS[i % Math.max(SPONSORS.length, 1)];
-  if (SPONSORS.length && s) {
-    slot.innerHTML = `<a class="sponsor" href="${s.href}" rel="nofollow sponsored noopener" target="_blank">
-      <img src="${s.img}" alt="${s.alt}" loading="lazy" width="320" height="100"></a>`;
-    return;
-  }
-  if (!ADSTERRA_KEY) return;
+/* ── 2. Adsterra — ख़ाली जगहें भरने के लिए ──
+   डैशबोर्ड में दो ad unit बनाएँ और उनकी key यहाँ डालें।
+   खाली छोड़ेंगे तो वह जगह बिलकुल नहीं दिखेगी (कोई ख़ाली डिब्बा नहीं)। */
+const ADSTERRA = {
+  banner: { key: "", w: 320, h: 50  },   // top / mid / bottom के लिए
+  side:   { key: "", w: 160, h: 600 },   // डेस्कटॉप की बग़ल वाली पट्टियों के लिए
+};
+
+/* ─────────────────────────────────────────────────────────── */
+
+const bySlot = {};
+for (const s of SPONSORS) (bySlot[s.slot] ||= []).push(s);
+
+const sponsorHtml = s =>
+  `<a class="sponsor" href="${s.href}" rel="nofollow sponsored noopener" target="_blank">
+     <img src="${s.img}" alt="${s.alt}" loading="lazy"></a>`;
+
+function fillSponsor(box, list) {
+  box.classList.add("has-sponsor");
+  box.innerHTML = sponsorHtml(list[0]);
+  if (list.length < 2) return;
+  let i = 0;
+  setInterval(() => { i = (i + 1) % list.length; box.innerHTML = sponsorHtml(list[i]); }, 8000);
+}
+
+function fillAdsterra(box, cfg) {
+  if (!cfg.key) return;                       // key नहीं तो जगह छिपी रहे
+  box.classList.add("has-ad");
   const f = document.createElement("iframe");
-  f.style.cssText = `width:${AD_W}px;height:${AD_H}px;border:0;display:block`;
+  f.style.cssText = `width:${cfg.w}px;height:${cfg.h}px;border:0;display:block`;
   f.setAttribute("scrolling", "no");
   f.loading = "lazy";
   f.title = "विज्ञापन";
-  slot.appendChild(f);
+  box.appendChild(f);
   const d = f.contentDocument;
   d.open();
   d.write(`<body style="margin:0">
-<script>atOptions={'key':'${ADSTERRA_KEY}','format':'iframe','height':${AD_H},'width':${AD_W},'params':{}};<\/script>
-<script src="//www.highperformanceformat.com/${ADSTERRA_KEY}/invoke.js"><\/script></body>`);
+<script>atOptions={'key':'${cfg.key}','format':'iframe','height':${cfg.h},'width':${cfg.w},'params':{}};<\/script>
+<script src="//www.highperformanceformat.com/${cfg.key}/invoke.js"><\/script></body>`);
   d.close();
+}
+
+document.querySelectorAll("[data-ad]").forEach(box => {
+  const slot = box.dataset.ad;
+  const mine = bySlot[slot];
+  if (mine && mine.length) return fillSponsor(box, mine);
+  fillAdsterra(box, (slot === "left" || slot === "right") ? ADSTERRA.side : ADSTERRA.banner);
 });
