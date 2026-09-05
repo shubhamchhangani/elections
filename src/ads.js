@@ -60,7 +60,7 @@ function fillHouse(box) {
   box.innerHTML = `<a class="house" href="https://wa.me/${HOUSE_WA}?text=${
     encodeURIComponent("पोकरण चुनाव वेबसाइट पर विज्ञापन के बारे में जानकारी चाहिए")
   }" rel="noopener" target="_blank">
-    <b>अपने व्यवसाय का विज्ञापन यहाँ</b>
+    <b>अपने व्यवसाय का विज्ञापन यहाँ लगवाएं</b>
     <span>पोकरण के हज़ारों लोग रोज़ देख रहे हैं · WhatsApp करें</span>
   </a>`;
 }
