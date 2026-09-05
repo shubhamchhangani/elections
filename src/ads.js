@@ -97,7 +97,7 @@ function fillAdsterra(box, cfg) {
 }
 
 (async () => {
-  const [db, cfgRows] = await Promise.all([fromDb(), cfgFromDb()]);
+  const [db, cfgRows] = await Promise.all([fromDb(), cfgFromDb(), loadGrand()]);
 
   const bySlot = {}, seen = new Set();
   for (const s of SPONSORS) (bySlot[s.slot] ||= []).push(s);
