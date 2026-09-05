@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SITE, WA, GA_ID } from "../src/config.js";
+import { SITE, WA, GA_ID, GSC_VERIFY } from "../src/config.js";
 import { symbolSvg } from "../src/symbols.js";   // एक ही जगह से — दोबारा कभी बेमेल न हो
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -39,7 +39,7 @@ const page = ({ title, desc, path, og, body, ward = null, schema = "" }) => `<!d
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${SITE}${path}">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#000000">${GSC_VERIFY ? `\n<meta name="google-site-verification" content="${GSC_VERIFY}">` : ""}
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
