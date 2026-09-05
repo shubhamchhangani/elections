@@ -160,7 +160,10 @@ function addStickClose(box) {
     const mine = bySlot[slot];
     if (mine && mine.length) return fillSponsor(box, mine);   // दुकान का बैनर सबसे पहले
     const m = mode[slot];
-    if (m === "adsterra") {                     // = "विज्ञापन दिखाएँ"
+    // नीचे "adsterra" सिर्फ़ डेटाबेस में सहेजी गई सेटिंग का पुराना नाम है
+    // (मतलब: "विज्ञापन दिखाएँ")। इसका Adsterra से कोई लेना-देना नहीं —
+    // जो चलेगा वह /admin में चिपकाया गया कोड है।
+    if (m === "adsterra") {
       if (!code[slot]) return;                  // कोड नहीं तो कुछ नहीं
       const h = hgt[slot] || (["mid","bottom","after","footer"].includes(slot) ? 260 : 60);
       return fillCode(box, code[slot], h);
