@@ -360,10 +360,9 @@ cpSync(join(ROOT, "src/config.js"), join(OUT, "config.js"));
 cpSync(join(ROOT, "src/ads.js"),    join(OUT, "ads.js"));
 if (existsSync(join(ROOT, "public"))) cpSync(join(ROOT, "public"), OUT, { recursive: true });
 
-/* _redirects — साफ़ URL (/ward-1 → ward-1.html) */
-writeFileSync(join(OUT, "_redirects"),
-  D.wards.map(w => `/ward-${w.ward}  /ward-${w.ward}.html  200`).join("\n") +
-  `\n/adhyaksh  /adhyaksh.html  200\n/adhyaksh-kaise-chunte-hain  /adhyaksh-kaise-chunte-hain.html  200\n`);
+/* Cloudflare Pages खुद ही /ward-14 पर ward-14.html देता है।
+   यहाँ _redirects लिखने से उसके अपने clean-URL redirect से टकराव होकर
+   अनंत 308 लूप बन जाता था — इसलिए यह फ़ाइल नहीं बनानी। */
 
 writeFileSync(join(OUT, "_headers"),
 `/*
