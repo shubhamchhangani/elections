@@ -61,7 +61,7 @@ const get = async (q) => {
 };
 
 const fromDb  = () => get("sponsors?select=slot,img,href,alt&active=eq.true&order=sort.asc");
-const cfgFromDb = () => get("ad_config?select=slot,fallback");
+const cfgFromDb = () => get("ad_config?select=slot,fallback,code");
 
 const sponsorHtml = s =>
   `<a class="sponsor" href="${s.href}" rel="nofollow sponsored noopener" target="_blank">
@@ -105,6 +105,30 @@ function fillHouse(box) {
 }
 
 
+/* नेटवर्क का अपना टैग — अलग iframe में, ताकि साइट को छू न सके */
+function fillCode(box, code, h) {
+  box.classList.add("has-ad");
+  const f = document.createElement("iframe");
+  f.style.cssText = `width:100%;max-width:340px;height:${h}px;border:0;display:block`;
+  f.setAttribute("scrolling", "no");
+  f.title = "विज्ञापन";
+  box.appendChild(f);
+  if (box.dataset.ad === "stick") addStickClose(box);
+  const d = f.contentDocument;
+  d.open();
+  d.write(`<body style="margin:0;display:flex;align-items:center;justify-content:center">${code}</body>`);
+  d.close();
+}
+
+function addStickClose(box) {
+  document.body.classList.add("has-stick");
+  const x = document.createElement("button");
+  x.className = "close"; x.type = "button"; x.textContent = "×";
+  x.setAttribute("aria-label", "विज्ञापन बंद करें");
+  x.onclick = () => { box.remove(); document.body.classList.remove("has-stick"); };
+  box.appendChild(x);
+}
+
 function fillAdsterra(box, cfg) {
   if (!cfg.key) return box.dataset.ad === "stick" ? null : fillHouse(box);
   box.classList.add("has-ad");
@@ -114,14 +138,7 @@ function fillAdsterra(box, cfg) {
   f.loading = "lazy";
   f.title = "विज्ञापन";
   box.appendChild(f);
-  if (box.dataset.ad === "stick") {
-    document.body.classList.add("has-stick");
-    const x = document.createElement("button");
-    x.className = "close"; x.type = "button"; x.textContent = "×";
-    x.setAttribute("aria-label", "विज्ञापन बंद करें");
-    x.onclick = () => { box.remove(); document.body.classList.remove("has-stick"); };
-    box.appendChild(x);
-  }
+  if (box.dataset.ad === "stick") addStickClose(box);
   const d = f.contentDocument;
   d.open();
   d.write(`<body style="margin:0">
@@ -140,16 +157,16 @@ function fillAdsterra(box, cfg) {
     bySlot[s.slot].push(s);
   }
 
-  const mode = { ...FALLBACK_IF_DB_DOWN };
-  for (const r of (cfgRows || [])) mode[r.slot] = r.fallback;
+  const mode = { ...FALLBACK_IF_DB_DOWN }, code = {};
+  for (const r of (cfgRows || [])) { mode[r.slot] = r.fallback; if (r.code) code[r.slot] = r.code; }
 
-  mode.stick = mode.bottom;                      // नीचे वाली पट्टी का नियम bottom जैसा
   document.querySelectorAll("[data-ad]").forEach(box => {
     const slot = box.dataset.ad;
     const mine = bySlot[slot];
     if (mine && mine.length) return fillSponsor(box, mine);   // दुकान का बैनर सबसे पहले
     const m = mode[slot];
     if (m === "adsterra") {
+      if (code[slot]) return fillCode(box, code[slot], slot === "mid" || slot === "bottom" ? 260 : 60);
       const u = ADSTERRA.units[slot];
       return fillAdsterra(box, u && u.key ? u : ADSTERRA.banner);
     }

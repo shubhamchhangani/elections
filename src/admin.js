@@ -5,7 +5,7 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 const $  = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 
-const SLOTS = { top: "सबसे ऊपर", mid: "बीच में", bottom: "सबसे नीचे" };
+const SLOTS = { top: "सबसे ऊपर", mid: "बीच में", bottom: "सबसे नीचे", stick: "नीचे चिपकी पट्टी" };
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
 
 function say(msg, bad) {
@@ -197,18 +197,37 @@ const MODES = {
 };
 
 async function loadCfg() {
-  const { data, error } = await sb.from("ad_config").select("slot,fallback");
+  const { data, error } = await sb.from("ad_config").select("slot,fallback,code");
   const box = $("#cfg");
   if (error) { box.innerHTML = `<p class="empty">नियंत्रण नहीं आया: ${esc(error.message)}</p>`; return; }
-  const by = Object.fromEntries(data.map(r => [r.slot, r.fallback]));
-  box.innerHTML = ["top", "mid", "bottom"].map(slot => `
-    <div class="cfg-row">
-      <b>${SLOTS[slot]}</b>
-      <select data-cfg="${slot}">
-        ${Object.entries(MODES).map(([v, t]) =>
-          `<option value="${v}"${by[slot] === v ? " selected" : ""}>${t}</option>`).join("")}
-      </select>
-    </div>`).join("");
+  const by = Object.fromEntries(data.map(r => [r.slot, r]));
+  box.innerHTML = ["top", "mid", "bottom", "stick"].map(slot => {
+    const r = by[slot] || {};
+    return `
+    <div class="cfg-box">
+      <div class="cfg-row">
+        <b>${SLOTS[slot]}</b>
+        <select data-cfg="${slot}">
+          ${Object.entries(MODES).map(([v, t]) =>
+            `<option value="${v}"${r.fallback === v ? " selected" : ""}>${t}</option>`).join("")}
+        </select>
+      </div>
+      <details${r.code ? " open" : ""}>
+        <summary>विज्ञापन का कोड ${r.code ? "· लगा हुआ है" : "· खाली"}</summary>
+        <textarea data-code="${slot}" rows="4"
+          placeholder="नेटवर्क से मिला पूरा &lt;script&gt; टैग यहाँ चिपकाएँ। खाली छोड़ेंगे तो पुराना Adsterra चलेगा।">${esc(r.code || "")}</textarea>
+        <button data-savecode="${slot}" class="btn ghost">यह कोड लगाएँ</button>
+      </details>
+    </div>`;
+  }).join("");
+
+  $$("[data-savecode]").forEach(b => b.addEventListener("click", async () => {
+    const slot = b.dataset.savecode;
+    const val = $(`[data-code="${slot}"]`).value.trim();
+    const { error } = await sb.from("ad_config")
+      .update({ code: val || null, updated: new Date().toISOString() }).eq("slot", slot);
+    error ? say(error.message, true) : (say(`${SLOTS[slot]} — कोड ${val ? "लग गया" : "हटा दिया"}, साइट पर तुरंत लागू`), loadCfg());
+  }));
 
   $$("[data-cfg]").forEach(sel => sel.addEventListener("change", async () => {
     const { error } = await sb.from("ad_config")
@@ -220,7 +239,7 @@ async function loadCfg() {
 
 $("#allOff").addEventListener("click", async () => {
   if (!confirm("तीनों जगह से सारे विज्ञापन हट जाएँगे (दुकानों के बैनर फिर भी दिखेंगे)। पक्का?")) return;
-  const { error } = await sb.from("ad_config").update({ fallback: "off" }).in("slot", ["top","mid","bottom"]);
+  const { error } = await sb.from("ad_config").update({ fallback: "off" }).in("slot", ["top","mid","bottom","stick"]);
   if (error) return say(error.message, true);
   say("सारे विज्ञापन बंद"); loadCfg();
 });
