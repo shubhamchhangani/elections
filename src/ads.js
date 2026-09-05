@@ -94,60 +94,75 @@ function fillHouse(box) {
 }
 
 
-/* पूरे पेज पर एक बार चलने वाला टैग — जैसे Adcash AutoTag, जो ख़ुद जगह
-   ढूँढ़कर विज्ञापन लगाता है। इसे iframe में नहीं डाल सकते, क्योंकि उसे पन्ना
-   दिखना चाहिए। इसलिए यह app.js के बाद चलता है — मतदान पहले तैयार हो जाता है। */
-async function runGlobal(html) {
-  if (!html || runGlobal._done) return;
-  runGlobal._done = true;
+/* HTML में आए <script> को क्रम से चलाओ — बाहरी वाले के लोड होने का इंतज़ार
+   करके। नेटवर्क का टैग पहले लाइब्रेरी लाता है और फिर उसे बुलाता है; दोनों एक
+   साथ डालने पर दूसरा पहले चल जाता था और "runAutoTag is not a function" आता था। */
+async function runScripts(host, html) {
   const holder = document.createElement("div");
   holder.innerHTML = html;
-
-  // ⚠️ एक-एक करके डालो और बाहरी script के लोड होने का इंतज़ार करो।
-  // नेटवर्क के टैग में पहला script लाइब्रेरी लाता है और दूसरा उसे बुलाता है।
-  // दोनों एक साथ डालने पर दूसरा पहले चल जाता था और
-  // "aclib.runAutoTag is not a function" आता था — एक भी विज्ञापन नहीं आता था।
   for (const el of [...holder.childNodes]) {
-    if (el.nodeType !== 1) continue;
-    if (el.tagName !== "SCRIPT") { document.body.appendChild(el); continue; }
-    const sc = document.createElement("script");
-    for (const at of el.attributes) sc.setAttribute(at.name, at.value);
-    sc.async = false;
-    if (el.src) {
-      const ready = new Promise(res => { sc.onload = res; sc.onerror = res; setTimeout(res, 8000); });
-      sc.src = el.src;
-      document.body.appendChild(sc);
-      await ready;
-      await new Promise(r => setTimeout(r, 250));   // लाइब्रेरी को तैयार होने दो
-    } else {
-      sc.text = el.textContent;
-      document.body.appendChild(sc);
+    if (el.nodeType !== 1) { host.appendChild(el.cloneNode(true)); continue; }
+    if (el.tagName !== "SCRIPT") {
+      const wrap = el.cloneNode(true);
+      const inner = [...wrap.querySelectorAll("script")];
+      inner.forEach(x => x.remove());
+      host.appendChild(wrap);
+      for (const x of inner) await runOne(wrap, x);
+      continue;
     }
+    await runOne(host, el);
   }
 }
 
-/* नेटवर्क का अपना टैग — अलग iframe में, ताकि साइट को छू न सके */
-function fillCode(box, code, h) {
+async function runOne(host, el) {
+  const sc = document.createElement("script");
+  for (const at of el.attributes) sc.setAttribute(at.name, at.value);
+  sc.async = false;
+  if (el.src) {
+    const ready = new Promise(r => { sc.onload = r; sc.onerror = r; setTimeout(r, 8000); });
+    sc.src = el.src;
+    host.appendChild(sc);
+    await ready;
+    await new Promise(r => setTimeout(r, 200));
+  } else {
+    sc.text = el.textContent;
+    host.appendChild(sc);
+    await new Promise(r => setTimeout(r, 30));
+  }
+}
+
+async function runGlobal(html) {
+  if (!html || runGlobal._done) return;
+  runGlobal._done = true;
+  await ensureLib();
+  await runScripts(document.body, html);
+}
+
+/* Adcash की लाइब्रेरी पूरे पन्ने पर एक ही बार */
+let _lib = null;
+function ensureLib() {
+  if (_lib) return _lib;
+  if (document.getElementById("aclib")) return (_lib = Promise.resolve());
+  _lib = new Promise(res => {
+    const s = document.createElement("script");
+    s.id = "aclib"; s.async = false;
+    s.src = "//acscdn.com/script/aclib.js";
+    s.onload = () => setTimeout(res, 250);
+    s.onerror = () => res();
+    setTimeout(res, 8000);
+    document.head.appendChild(s);
+  });
+  return _lib;
+}
+
+/* विज्ञापन अपनी ही जगह पर बनता है — Adcash का banner उसी <div> के अंदर
+   बनता है जिसमें उसका script होता है, इसलिए इसे iframe में नहीं डाल सकते। */
+async function fillCode(box, code, h) {
   box.classList.add("has-ad");
-  const f = document.createElement("iframe");
-  f.style.cssText = `width:100%;max-width:${h > 300 ? 360 : 340}px;height:${h}px;border:0;display:block`;
-  f.setAttribute("scrolling", "no");
-  f.loading = "lazy";
-  f.title = "विज्ञापन";
-
-  // ⚠️ यही सबसे ज़रूरी लाइन है।
-  // allow-same-origin और allow-top-navigation जान-बूझकर नहीं दिए गए —
-  // इसलिए विज्ञापन का कोड न हमारा पन्ना पढ़ सकता है, न उसे कहीं और भेज सकता है।
-  // यानी वोट का बटन दबाने पर कोई विज्ञापन बीच में नहीं आ सकता।
-  // allow-popups इसलिए है कि कोई विज्ञापन पर जान-बूझकर क्लिक करे तो वह
-  // नए टैब में खुले — हमारा पन्ना वहीं का वहीं रहे।
-  f.setAttribute("sandbox", "allow-scripts allow-popups allow-popups-to-escape-sandbox allow-forms");
-  f.srcdoc = `<!doctype html><html><head><meta charset="utf-8">
-    <style>html,body{margin:0;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden}</style>
-    </head><body>${code}</body></html>`;
-
-  box.appendChild(f);
+  if (h) box.style.minHeight = h + "px";
   if (box.dataset.ad === "stick") addStickClose(box);
+  await ensureLib();
+  await runScripts(box, code);
 }
 
 function addStickClose(box) {
