@@ -1,12 +1,11 @@
 import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { SITE, WA } from "../src/config.js";   // एक ही जगह से — दोबारा कभी बेमेल न हो
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT  = join(ROOT, "dist");
 const D    = JSON.parse(readFileSync(join(ROOT, "data/candidates.json"), "utf8"));
-const SITE = "https://pokaran-chunav.pages.dev";
-const WA   = "919079269147";
 
 const DEVN = ["०","१","२","३","४","५","६","७","८","९"];
 const dev  = n => String(n).replace(/\d/g, d => DEVN[+d]);
@@ -114,7 +113,7 @@ const leader = `
       <div><p class="naam"></p><p class="meta"></p></div>
       <div class="big"></div>
     </div>
-    <div class="foot"><span><b data-total>०</b> लोगों की राय</span><span>pokaran-chunav.pages.dev</span></div>
+    <div class="foot"><span><b data-total>०</b> लोगों की राय</span><span>${SITE.replace(/^https?:\/\//,"")}</span></div>
   </div>`;
 
 const gate = `

@@ -23,7 +23,7 @@
 
 1. https://supabase.com → **Start your project** → GitHub से साइन-इन
 2. **New project**
-   - Name: `pokaran-chunav`
+   - Name: `pokaranchunav`
    - Database password: मज़बूत रखें, **कहीं लिखकर रखें**
    - Region: **Southeast Asia (Singapore)** ← भारत के सबसे पास
 3. बनने में ~2 मिनट
@@ -43,8 +43,8 @@
 
 1. https://dash.cloudflare.com → खाता बनाएँ
 2. बाएँ मेन्यू → **Turnstile** → **Add widget**
-   - Widget name: `pokaran-chunav`
-   - Domain: `pokaran-chunav.pages.dev`
+   - Widget name: `pokaranchunav`
+   - Domain: `pokaranchunav.pages.dev`  ← Cloudflare Pages वाले URL से बिलकुल मेल खाना चाहिए
    - Widget Mode: **Invisible** ← ज़रूरी, वरना लोगों को चेकबॉक्स दिखेगा
 3. **Create** → दो चाबियाँ मिलेंगी:
    - **Site Key** (सार्वजनिक) — यह `src/config.js` में जाएगी
@@ -90,15 +90,16 @@ export const TURNSTILE_KEY = "0x4AAAAAAA...";                  // Turnstile Site
    ```bash
    cd ~/elections
    git add -A && git commit -m "पोकरण चुनाव 2026"
-   gh repo create pokaran-chunav --private --source=. --push
+   git remote add origin https://github.com/shubhamchhangani/elections.git
+   git push -u origin main
    ```
 2. https://dash.cloudflare.com → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**
-3. `pokaran-chunav` चुनें। Build settings:
+3. `pokaranchunav` चुनें। Build settings:
    - Framework preset: **None**
    - Build command: `npm run build`
    - Build output directory: `dist`
 4. **Save and Deploy**
-5. प्रोजेक्ट का नाम `pokaran-chunav` रखें ताकि URL `https://pokaran-chunav.pages.dev` बने
+5. प्रोजेक्ट का नाम `pokaranchunav` रखें ताकि URL `https://pokaranchunav.pages.dev` बने
 
 > आगे से हर `git push` पर साइट 1 मिनट में अपने आप अपडेट।
 
@@ -119,7 +120,7 @@ export const TURNSTILE_KEY = "0x4AAAAAAA...";                  // Turnstile Site
 ## 7️⃣ Adsterra (~10 मिनट, बाद में भी चलेगा)
 
 1. https://adsterra.com → **Publisher** → Sign up
-2. Add website: `https://pokaran-chunav.pages.dev`, category **News**
+2. Add website: `https://pokaranchunav.pages.dev`, category **News**
 3. Traffic type: **Mainstream**
 4. **"Boost CPM" — बंद रखें** ← सबसे ज़रूरी
 5. Blocked verticals: **adult, dating, gambling, betting**
