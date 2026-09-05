@@ -50,7 +50,7 @@ const get = async (q) => {
 };
 
 const fromDb  = () => get("sponsors?select=slot,img,href,alt&active=eq.true&order=sort.asc");
-const cfgFromDb = () => get("ad_config?select=slot,fallback,code,height");
+const cfgFromDb = () => get("ad_config?select=slot,fallback,code,height,count");
 
 const sponsorHtml = s =>
   `<a class="sponsor" href="${s.href}" rel="nofollow sponsored noopener" target="_blank">
@@ -161,11 +161,35 @@ function addStickClose(box) {
     bySlot[s.slot].push(s);
   }
 
-  const mode = { ...FALLBACK_IF_DB_DOWN }, code = {}, hgt = {};
+  const mode = { ...FALLBACK_IF_DB_DOWN }, code = {}, hgt = {}, cnt = {};
   for (const r of (cfgRows || [])) {
     mode[r.slot] = r.fallback;
     if (r.code) code[r.slot] = r.code;
     if (r.height) hgt[r.slot] = r.height;
+    cnt[r.slot] = Math.max(1, Math.min(20, r.count || 1));
+  }
+
+  /* तलहटी के नीचे कई विज्ञापन — मतपत्र और नतीजों के बहुत नीचे, और
+     तभी लोड होते हैं जब कोई वहाँ तक पहुँचे, ताकि पन्ना धीमा न हो। */
+  const foot = document.getElementById("footads");
+  if (foot && code.footer && mode.footer !== "off") {
+    const n = cnt.footer || 1;
+    const h = hgt.footer || 260;
+    for (let i = 0; i < n; i++) {
+      const box = document.createElement("div");
+      box.className = "ad ad-footer";
+      box.dataset.ad = "footer";
+      foot.appendChild(box);
+    }
+    const io = new IntersectionObserver(es => {
+      for (const e of es) {
+        if (!e.isIntersecting || e.target._done) continue;
+        e.target._done = true;
+        fillCode(e.target, code.footer, h);
+        io.unobserve(e.target);
+      }
+    }, { rootMargin: "300px" });
+    [...foot.children].forEach(el => io.observe(el));
   }
 
   if (mode.global !== "off" && code.global) runGlobal(code.global);   // जान-बूझकर await नहीं — विज्ञापन पन्ने को रोके नहीं

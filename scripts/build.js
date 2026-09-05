@@ -106,7 +106,7 @@ ${body}
   </div>
 </footer>
 
-<div class="wrap">${adSlot("footer")}</div>
+<div class="wrap"><div id="footads" class="footads"></div></div>
 
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <div class="stick" data-ad="stick"></div>

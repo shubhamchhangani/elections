@@ -216,7 +216,7 @@ function chalRahaHai(r, hasSponsor) {
 }
 
 async function loadCfg() {
-  const { data, error } = await sb.from("ad_config").select("slot,fallback,code");
+  const { data, error } = await sb.from("ad_config").select("slot,fallback,code,height,count");
   const box = $("#cfg");
   if (error) { box.innerHTML = `<p class="empty">नियंत्रण नहीं आया: ${esc(error.message)}</p>`; return; }
   const by = Object.fromEntries(data.map(r => [r.slot, r]));
@@ -239,6 +239,9 @@ async function loadCfg() {
         <summary>विज्ञापन का कोड ${r.code ? "· लगा हुआ है" : "· खाली"}</summary>
         <textarea data-code="${slot}" rows="4"
           placeholder="नेटवर्क से मिला पूरा &lt;script&gt; टैग यहाँ चिपकाएँ। खाली छोड़ेंगे तो पुराना Adsterra चलेगा।">${esc(r.code || "")}</textarea>
+        ${slot === "footer" ? `<label class="hgt">कितने विज्ञापन (1–20)
+          <input type="number" data-cnt="${slot}" value="${r.count || 1}" min="1" max="20">
+          <small>तलहटी के नीचे यही कोड इतनी बार दिखेगा। हर एक अलग iframe में।</small></label>` : ""}
         <label class="hgt">ऊँचाई (px) — बड़े/वीडियो विज्ञापन के लिए 600 तक
           <input type="number" data-hgt="${slot}" value="${r.height || 0}" min="0" max="900" step="10">
           <small>0 = अपने आप (पट्टी 60, बड़ा 260)</small></label>
@@ -251,8 +254,10 @@ async function loadCfg() {
     const slot = b.dataset.savecode;
     const val = $(`[data-code="${slot}"]`).value.trim();
     const h = Number($(`[data-hgt="${slot}"]`).value) || 0;
-    const { error } = await sb.from("ad_config")
-      .update({ code: val || null, height: h, updated: new Date().toISOString() }).eq("slot", slot);
+    const cEl = $(`[data-cnt="${slot}"]`);
+    const patch = { code: val || null, height: h, updated: new Date().toISOString() };
+    if (cEl) patch.count = Math.max(1, Math.min(20, Number(cEl.value) || 1));
+    const { error } = await sb.from("ad_config").update(patch).eq("slot", slot);
     error ? say(error.message, true) : (say(`${SLOTS[slot]} — कोड ${val ? "लग गया" : "हटा दिया"}, साइट पर तुरंत लागू`), loadCfg());
   }));
 
