@@ -430,6 +430,12 @@ write("admin.html", `<!doctype html>
     </div>
     <div id="list"></div>
 
+    <h2>कहाँ क्या दिखे</h2>
+    <p class="hint">जिस जगह दुकान का बैनर लगा है, वहाँ हमेशा वही दिखेगा।
+      नीचे यह तय करें कि <b>जब उस जगह कोई बैनर न हो</b> तब क्या दिखे।</p>
+    <div id="cfg"></div>
+    <button id="allOff" class="btn ghost">तीनों जगह से सारे विज्ञापन हटा दें</button>
+
     <h2>नया बैनर लगाएँ</h2>
     <div class="spec">
       <b>तस्वीर का नाप</b>

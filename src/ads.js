@@ -27,32 +27,32 @@ const SPONSORS = [
 /* ── 2. Adsterra — ख़ाली जगहें भरने के लिए ──
   डैशबोर्ड में एक banner ad unit बनाएँ और उसकी key यहाँ डालें।
    खाली छोड़ेंगे तो वह जगह बिलकुल नहीं दिखेगी (कोई ख़ाली डिब्बा नहीं)। */
-/* ⚠️ आपातकालीन स्विच — कोई गंदा विज्ञापन दिखे तो इसे false करके push करें।
-   Adsterra तुरंत बंद, और उसकी जगह आपका अपना "विज्ञापन यहाँ लगवाएँ" वाला बॉक्स। */
-const ADSTERRA_ON = false;
+/* अब हर जगह का नियंत्रण /admin से है (ad_config टेबल)।
+   यह सिर्फ़ आख़िरी सहारा है — अगर डेटाबेस जवाब ही न दे। */
+const FALLBACK_IF_DB_DOWN = { top: "house", mid: "house", bottom: "house" };
 
 const ADSTERRA = {
   // यह domain हर Adsterra खाते का अलग होता है — GET CODE वाले script src से लें
   host:   "https://www.highrevenueformat.com",
   banner: { key: "5e99d15e87d709158409d34747ba1b34", w: 320, h: 50 },
-  slots:  ["top", "mid", "bottom"],    // तीनों जगह Adsterra banner
 };
 
 /* ─────────────────────────────────────────────────────────── */
 
 /* डेटाबेस से आए बैनर उसी जगह के हार्डकोड बैनर की जगह ले लेते हैं।
    यानी /admin से लगाया बैनर हमेशा जीतता है। */
-async function fromDb() {
+const H = { apikey: SUPABASE_ANON, authorization: "Bearer " + SUPABASE_ANON };
+const get = async (q) => {
   try {
-    const r = await fetch(
-      `${SUPABASE_URL}/rest/v1/sponsors?select=slot,img,href,alt&active=eq.true&order=sort.asc`,
-      { headers: { apikey: SUPABASE_ANON, authorization: "Bearer " + SUPABASE_ANON } }
-    );
-    if (!r.ok) return [];
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${q}`, { headers: H });
+    if (!r.ok) return null;
     const rows = await r.json();
-    return Array.isArray(rows) ? rows : [];
-  } catch { return []; }
-}
+    return Array.isArray(rows) ? rows : null;
+  } catch { return null; }
+};
+
+const fromDb  = () => get("sponsors?select=slot,img,href,alt&active=eq.true&order=sort.asc");
+const cfgFromDb = () => get("ad_config?select=slot,fallback");
 
 const sponsorHtml = s =>
   `<a class="sponsor" href="${s.href}" rel="nofollow sponsored noopener" target="_blank">
@@ -80,7 +80,7 @@ function fillHouse(box) {
 }
 
 function fillAdsterra(box, cfg) {
-  if (!ADSTERRA_ON || !cfg.key) return fillHouse(box);
+  if (!cfg.key) return fillHouse(box);
   box.classList.add("has-ad");
   const f = document.createElement("iframe");
   f.style.cssText = `width:${cfg.w}px;height:${cfg.h}px;border:0;display:block`;
@@ -97,20 +97,25 @@ function fillAdsterra(box, cfg) {
 }
 
 (async () => {
-  const bySlot = {};
-  for (const s of SPONSORS) (bySlot[s.slot] ||= []).push(s);
+  const [db, cfgRows] = await Promise.all([fromDb(), cfgFromDb()]);
 
-  const db = await fromDb();
-  for (const s of db) {
-    if (!bySlot._db) bySlot._db = new Set();
-    if (!bySlot._db.has(s.slot)) { bySlot[s.slot] = []; bySlot._db.add(s.slot); }
+  const bySlot = {}, seen = new Set();
+  for (const s of SPONSORS) (bySlot[s.slot] ||= []).push(s);
+  for (const s of (db || [])) {                    // /admin वाला बैनर हार्डकोड पर भारी
+    if (!seen.has(s.slot)) { bySlot[s.slot] = []; seen.add(s.slot); }
     bySlot[s.slot].push(s);
   }
+
+  const mode = { ...FALLBACK_IF_DB_DOWN };
+  for (const r of (cfgRows || [])) mode[r.slot] = r.fallback;
 
   document.querySelectorAll("[data-ad]").forEach(box => {
     const slot = box.dataset.ad;
     const mine = bySlot[slot];
-    if (mine && mine.length) return fillSponsor(box, mine);
-    if (ADSTERRA.slots.includes(slot)) fillAdsterra(box, ADSTERRA.banner);
+    if (mine && mine.length) return fillSponsor(box, mine);   // दुकान का बैनर सबसे पहले
+    const m = mode[slot];
+    if (m === "adsterra") return fillAdsterra(box, ADSTERRA.banner);
+    if (m === "house")    return fillHouse(box);
+    /* off — कुछ नहीं */
   });
 })();

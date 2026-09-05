@@ -25,7 +25,7 @@ function say(msg, bad) {
 function applySession(session) {
   $("#login").hidden = !!session;
   $("#panel").hidden = !session;
-  if (session) { $("#who").textContent = session.user.email; load(); }
+  if (session) { $("#who").textContent = session.user.email; load(); loadCfg(); }
 }
 
 $("#loginForm").addEventListener("submit", async e => {
@@ -71,6 +71,42 @@ async function load() {
     error ? say(error.message, true) : (say("हट गया"), load());
   }));
 }
+
+/* ── कहाँ क्या दिखे ────────────────────────────────────────── */
+const MODES = {
+  adsterra: "Adsterra का विज्ञापन",
+  house:    "अपना न्यौता — 'विज्ञापन यहाँ लगवाएँ'",
+  off:      "कुछ नहीं — जगह ग़ायब"
+};
+
+async function loadCfg() {
+  const { data, error } = await sb.from("ad_config").select("slot,fallback");
+  const box = $("#cfg");
+  if (error) { box.innerHTML = `<p class="empty">नियंत्रण नहीं आया: ${esc(error.message)}</p>`; return; }
+  const by = Object.fromEntries(data.map(r => [r.slot, r.fallback]));
+  box.innerHTML = ["top", "mid", "bottom"].map(slot => `
+    <div class="cfg-row">
+      <b>${SLOTS[slot]}</b>
+      <select data-cfg="${slot}">
+        ${Object.entries(MODES).map(([v, t]) =>
+          `<option value="${v}"${by[slot] === v ? " selected" : ""}>${t}</option>`).join("")}
+      </select>
+    </div>`).join("");
+
+  $$("[data-cfg]").forEach(sel => sel.addEventListener("change", async () => {
+    const { error } = await sb.from("ad_config")
+      .update({ fallback: sel.value, updated: new Date().toISOString() })
+      .eq("slot", sel.dataset.cfg);
+    error ? say(error.message, true) : say(`${SLOTS[sel.dataset.cfg]} — बदल गया, साइट पर तुरंत लागू`);
+  }));
+}
+
+$("#allOff").addEventListener("click", async () => {
+  if (!confirm("तीनों जगह से सारे विज्ञापन हट जाएँगे (दुकानों के बैनर फिर भी दिखेंगे)। पक्का?")) return;
+  const { error } = await sb.from("ad_config").update({ fallback: "off" }).in("slot", ["top","mid","bottom"]);
+  if (error) return say(error.message, true);
+  say("सारे विज्ञापन बंद"); loadCfg();
+});
 
 /* ── नया बैनर ──────────────────────────────────────────────── */
 let _prevUrl = null;
