@@ -353,6 +353,25 @@ write("adhyaksh-kaise-chunte-hain.html", page({
   ${adSlot}`
 }));
 
+/* 404 — इसके बिना Cloudflare हर ग़ायब फ़ाइल पर homepage का HTML
+   200 के साथ लौटाता है, जिससे og:image टूटता है और Google को soft-404 मिलते हैं। */
+write("404.html", page({
+  title: "पेज नहीं मिला — पोकरण नगर पालिका चुनाव 2026",
+  desc: "यह पेज मौजूद नहीं है। पोकरण नगर पालिका चुनाव 2026 के सभी 25 वार्ड देखें।",
+  path: "/404",
+  og: { title: "पोकरण नगर पालिका चुनाव 2026", desc: "अपना वार्ड चुनें और जनता की राय देखें।", img: "/og/home.png" },
+  body: `
+  <div class="head">
+    <h1>यह पेज नहीं मिला</h1>
+    <p class="kshetra">शायद लिंक अधूरा रह गया। नीचे से अपना वार्ड चुनें।</p>
+  </div>
+  <div class="grid">
+    ${D.wards.map(x => `<a href="/ward-${x.ward}"><span>${dev(x.ward)}</span><small>वार्ड</small></a>`).join("\n    ")}
+  </div>
+  <a class="btn" href="/">मुख्य पेज पर जाएँ</a>
+  <a class="btn ghost" href="/adhyaksh">अध्यक्ष किस पार्टी का बनेगा?</a>`
+}));
+
 /* स्थिर फ़ाइलें */
 cpSync(join(ROOT, "src/styles.css"), join(OUT, "styles.css"));
 cpSync(join(ROOT, "src/app.js"),    join(OUT, "app.js"));
