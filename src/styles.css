@@ -293,88 +293,32 @@ a{color:var(--evm)}
 }
 .note.warn{border-right-color:var(--lamp);background:#FBF1F1}
 
-/* ── विज्ञापन ─────────────────────────────────────────── */
-/* ख़ाली जगह कुछ नहीं दिखाती — भरने पर ही जगह लेती है */
-.ad{display:none}
-.ad.has-ad,.ad.has-sponsor,.ad.has-house{
-  display:block;margin:18px 0;overflow:visible;
-}
-.ad.has-ad{
-  display:flex;align-items:center;justify-content:center;
-  border:1px solid var(--rule-soft);background:#F5F3EE;
-  padding:4px 0;overflow:visible;
-  /* Adcash ads अपना size खुद set करते हैं — min-height JS से आता है */
-}
-.ad-top.has-ad,.ad-top.has-sponsor,.ad-top.has-house{
-  margin:10px 0 6px;
-}
-/* mobile: top slot = 336×280, so min-height 280px */
-@media(max-width:479px){.ad-top.has-ad{min-height:280px !important}}
-
-
-/* after slot — ballot के बाद 336x280, center में */
-.ad-after.has-ad{
-  justify-content:center;
-  min-height:280px;
+/* ── विज्ञापन (सिर्फ़ दुकानों के बैनर) ─────────── */
+.ad{display:none;position:relative}
+.ad.has-sponsor,.ad.has-house{
+  display:block;margin:18px 0;overflow:hidden;
 }
 
-/* mid slot — Video Slider को overflow चाहिए */
-.ad-mid.has-ad{
-  overflow:visible;
-  min-height:250px;
-}
-
-/* bottom slot — 468x60 footer banner */
-.ad-bottom.has-ad{
-  min-height:60px;
-}
-
-/* विज्ञापन का लेबल — UX: user को पता रहे यह ad है */
-.ad.has-ad::before,.ad.has-sponsor::before{
-  content:"विज्ञापन";
-  position:absolute;
-  font-size:9px;font-weight:600;letter-spacing:.08em;
-  color:var(--ink-soft);opacity:.6;
-  top:2px;right:6px;
+/* दुकान का बैनर — पूरी चौड़ाई */
+.ad.has-sponsor{border:1.5px solid var(--rule);background:var(--paper-2)}
+.sponsor{display:block;width:100%;line-height:0;text-decoration:none}
+.sponsor img{width:100%;height:auto;display:block}
+.ad.has-sponsor::before{
+  content:"प्रायोजित";
+  position:absolute;top:3px;right:6px;
+  font-size:9px;letter-spacing:.06em;color:var(--ink-soft);opacity:.5;
   pointer-events:none;
 }
-.ad{position:relative}
 
-/* दुकान का बैनर — पूरी चौड़ाई, अनुपात अपने आप */
-.ad.has-sponsor{border:1.5px solid var(--rule);background:var(--paper-2)}
-.sponsor{display:block;width:100%;line-height:0}
-.sponsor img{width:100%;height:auto;display:block}
-
-/* अपना न्यौता — जब कोई प्रायोजक न हो */
+/* न्यौता — कोई दुकान नहीं तो WhatsApp invite */
 .ad.has-house{border:1.5px dashed var(--rule-soft);background:#FCFBF7}
-.house{display:block;width:100%;padding:11px 14px;text-decoration:none;text-align:center}
-.house b{display:block;font-family:"Martel",Georgia,serif;font-size:15px;line-height:1.35;color:var(--ink)}
-.house i{font-style:normal;font-weight:700;color:#8A5A00}
-.house i b{font-variant-numeric:tabular-nums}
-.house span{display:block;font-size:12.5px;color:var(--ink-soft);margin-top:3px}
+.house{display:block;width:100%;padding:12px 14px;text-decoration:none;text-align:center}
+.house b{display:block;font-family:"Martel",Georgia,serif;font-size:15px;line-height:1.4;color:var(--ink)}
+.house span{display:block;font-size:13px;color:var(--evm);margin-top:4px;font-weight:600}
 
-/* तलहटी के नीचे का विज्ञापन क्षेत्र */
+/* footer area */
 .footads{margin:0 0 24px}
 .footads .ad{margin:10px 0}
-
-/* नीचे चिपकी पट्टी — भरने पर ही दिखती है */
-.stick{display:none}
-.stick.has-ad,.stick.has-sponsor{
-  display:flex;align-items:center;justify-content:center;
-  position:fixed;left:0;right:0;bottom:0;z-index:40;
-  background:#F5F3EE;border-top:1px solid var(--rule);
-  padding:3px 0;min-height:56px;
-  /* smooth slide-in */
-  animation:stickIn .35s ease-out;
-}
-@keyframes stickIn{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.stick .close{
-  position:absolute;top:-11px;right:6px;width:22px;height:22px;
-  border:1px solid var(--rule);border-radius:50%;background:#fff;
-  font:700 13px/1 system-ui;color:var(--ink-soft);cursor:pointer;
-  display:flex;align-items:center;justify-content:center;padding:0;
-}
-body.has-stick{padding-bottom:62px}
 
 
 
