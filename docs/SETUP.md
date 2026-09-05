@@ -57,7 +57,8 @@
 यह वह हिस्सा है जो कैप्चा जाँचता है। Secret Key इसी के अंदर रहती है, ब्राउज़र में कभी नहीं जाती।
 
 1. Supabase डैशबोर्ड → बाएँ मेन्यू **Edge Functions** → **Deploy a new function** → **Via Editor**
-2. Function name: **`vote`** (बिलकुल यही नाम, छोटे अक्षरों में)
+2. Function name: कोई भी रखें — **जो नाम रखें, वही `src/config.js` की `VOTE_FN` में लिखें**
+   (Supabase डिफ़ॉल्ट में `smart-processor` जैसा नाम सुझाता है; वही रखना भी ठीक है)
 3. एडिटर में जो कुछ लिखा है सब मिटाकर `supabase/functions/vote/index.ts` का **पूरा** कंटेंट चिपकाएँ
 4. **Deploy**
 5. अब secret डालें: **Project Settings** (⚙️) → **Edge Functions** → **Add new secret**

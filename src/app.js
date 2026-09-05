@@ -1,8 +1,8 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm";
-import { SUPABASE_URL, SUPABASE_ANON, TURNSTILE_KEY, SITE, GATE, POLL_MS } from "./config.js";
+import { SUPABASE_URL, SUPABASE_ANON, TURNSTILE_KEY, VOTE_FN, SITE, GATE, POLL_MS } from "./config.js";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
-const VOTE_URL = SUPABASE_URL + "/functions/v1/vote";
+const VOTE_URL = SUPABASE_URL + "/functions/v1/" + VOTE_FN;
 
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
