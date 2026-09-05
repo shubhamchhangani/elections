@@ -80,11 +80,12 @@ begin
     return json_build_object('ok', false, 'code', 'bad_ward');
   end if;
 
-  -- परत 3: एक फ़ोन से इस वार्ड में अधिकतम 3 वोट
-  -- (फ़िंगरप्रिंट कभी-कभी दो असली लोगों का एक जैसा निकलता है, इसलिए 1 नहीं 3)
+  -- परत 3: एक फ़ोन = एक वोट प्रति वार्ड।
+  -- शुरू में 3 रखा था ताकि घर का साझा फ़ोन चल जाए, पर 4,794 वोट आने तक
+  -- 268 फ़ोन उसी छूट का फ़ायदा उठाकर दोबारा वोट डाल चुके थे (7%)।
   select count(*) into v_dev from public.votes
    where ward = p_ward and device_hash = p_device;
-  if v_dev >= 3 then
+  if v_dev >= 1 then
     return json_build_object('ok', false, 'code', 'device_limit');
   end if;
 
