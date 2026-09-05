@@ -107,6 +107,7 @@ ${body}
 </footer>
 
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+<div class="stick" data-ad="stick"></div>
 <script type="module" src="/ads.js"></script>
 <script type="module" src="/app.js"></script>${ga}
 </body>
@@ -612,6 +613,12 @@ writeFileSync(join(OUT, "sitemap.xml"),
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map(u => `  <url><loc>${SITE}${u}</loc><changefreq>hourly</changefreq><priority>${u==="/"?"1.0":"0.8"}</priority></url>`).join("\n")}
 </urlset>`);
+
+/* ads.txt — विज्ञापन नेटवर्क इसे माँगते हैं। नेटवर्क से मिली लाइन
+   src/ads.txt में चिपका दें; ख़ाली रहे तो सिर्फ़ टिप्पणी जाती है। */
+writeFileSync(join(OUT, "ads.txt"),
+  (existsSync(join(ROOT, "src/ads.txt")) ? readFileSync(join(ROOT, "src/ads.txt"), "utf8") : "")
+  || "# विज्ञापन नेटवर्क से मिली लाइन src/ads.txt में डालें\n");
 
 writeFileSync(join(OUT, "robots.txt"), `User-agent: *\nAllow: /\nDisallow: /admin\n\nSitemap: ${SITE}/sitemap.xml\n`);
 

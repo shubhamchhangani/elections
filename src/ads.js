@@ -38,9 +38,10 @@ const ADSTERRA = {
   // हर जगह के लिए अलग नाप। 300x250 वाला 320x50 से 2-4 गुना ज़्यादा देता है,
   // इसलिए बीच और नीचे वहीं रखा है। key ख़ाली हो तो नीचे वाला 320x50 चलेगा।
   units: {
-    top:    { key: "",                                 w: 320, h: 50  },
-    mid:    { key: "",                                 w: 300, h: 250 },
-    bottom: { key: "",                                 w: 300, h: 250 },
+    top:    { key: "", w: 320, h: 50  },
+    mid:    { key: "", w: 300, h: 250 },
+    bottom: { key: "", w: 300, h: 250 },
+    stick:  { key: "", w: 320, h: 50  },   // नीचे चिपकी पट्टी
   },
   banner: { key: "5e99d15e87d709158409d34747ba1b34", w: 320, h: 50 },   // पुराना, सहारे के लिए
 };
@@ -105,7 +106,7 @@ function fillHouse(box) {
 
 
 function fillAdsterra(box, cfg) {
-  if (!cfg.key) return fillHouse(box);
+  if (!cfg.key) return box.dataset.ad === "stick" ? null : fillHouse(box);
   box.classList.add("has-ad");
   const f = document.createElement("iframe");
   f.style.cssText = `width:${cfg.w}px;height:${cfg.h}px;border:0;display:block`;
@@ -113,6 +114,14 @@ function fillAdsterra(box, cfg) {
   f.loading = "lazy";
   f.title = "विज्ञापन";
   box.appendChild(f);
+  if (box.dataset.ad === "stick") {
+    document.body.classList.add("has-stick");
+    const x = document.createElement("button");
+    x.className = "close"; x.type = "button"; x.textContent = "×";
+    x.setAttribute("aria-label", "विज्ञापन बंद करें");
+    x.onclick = () => { box.remove(); document.body.classList.remove("has-stick"); };
+    box.appendChild(x);
+  }
   const d = f.contentDocument;
   d.open();
   d.write(`<body style="margin:0">
@@ -134,6 +143,7 @@ function fillAdsterra(box, cfg) {
   const mode = { ...FALLBACK_IF_DB_DOWN };
   for (const r of (cfgRows || [])) mode[r.slot] = r.fallback;
 
+  mode.stick = mode.bottom;                      // नीचे वाली पट्टी का नियम bottom जैसा
   document.querySelectorAll("[data-ad]").forEach(box => {
     const slot = box.dataset.ad;
     const mine = bySlot[slot];
@@ -144,7 +154,7 @@ function fillAdsterra(box, cfg) {
       return fillAdsterra(box, u && u.key ? u : ADSTERRA.banner);
     }
     // ऊपर वाली पट्टी यही बात पहले से कह रही है — top पर दोबारा मत दिखाओ
-    if (m === "house" && slot !== "top" ) return fillHouse(box);
+    if (m === "house" && slot !== "top" && slot !== "stick") return fillHouse(box);
     /* off — कुछ नहीं */
   });
 })();

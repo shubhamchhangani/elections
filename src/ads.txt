@@ -1,0 +1,2 @@
+# यहाँ अपने विज्ञापन नेटवर्क से मिली लाइन चिपकाएँ, फिर npm run build → push
+# उदाहरण (Adcash):  adcash.com, 0000000, DIRECT
