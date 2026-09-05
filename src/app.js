@@ -120,10 +120,13 @@ function paint() {
     }
   });
 
+  if (showResult && !paint._sawResult) { paint._sawResult = true; track("result_shown", { ward: WARD, total: state.total }); }
+
   const gate = $(".gate");
   if (gate) {
     const need = state.phase !== "frozen" && state.total < GATE;
     gate.classList.toggle("hide", !need);
+    if (need && !paint._sawGate) { paint._sawGate = true; track("gate_shown", { ward: WARD, total: state.total }); }
     if (need) {
       $(".count", gate).textContent = dev(state.total);
       $(".track i", gate).style.width = Math.min(100, (state.total / GATE) * 100) + "%";
@@ -195,6 +198,7 @@ async function vote(choice, row) {
   } catch {
     state.busy = false;
     if (row) row.classList.remove("chosen", "flash");
+    track("vote_blocked", { ward: WARD, reason: "network" });
     toast("नेटवर्क धीमा है। दोबारा कोशिश करें।");
     return;
   }
@@ -202,10 +206,12 @@ async function vote(choice, row) {
 
   if (out.ok) {
     state.mine = choice;
+    track("vote_cast", { ward: WARD, choice, dal: row ? row.dataset.dal : undefined });
     toast("आपका वोट दर्ज हो गया ✓");
   } else {
     if (out.code === "already") state.mine = out.choice || null;
     else if (row) row.classList.remove("chosen", "flash");
+    track("vote_blocked", { ward: WARD, reason: out.code || "unknown" });
     toast(MSG[out.code] || "वोट दर्ज नहीं हो सका।");
   }
   await refresh();
@@ -220,9 +226,16 @@ function wireShare() {
   $$("[data-share]").forEach(b => b.addEventListener("click", async e => {
     e.preventDefault();
     const text = shareText();
-    if (b.dataset.share === "wa") location.href = "https://wa.me/?text=" + encodeURIComponent(text);
-    else if (navigator.share) { try { await navigator.share({ text }); } catch {} }
-    else { try { await navigator.clipboard.writeText(text); toast("लिंक कॉपी हो गया"); } catch {} }
+    if (b.dataset.share === "wa") {
+      track("share", { method: "whatsapp", ward: WARD });
+      location.href = "https://wa.me/?text=" + encodeURIComponent(text);
+    } else if (navigator.share) {
+      track("share", { method: "native", ward: WARD });
+      try { await navigator.share({ text }); } catch {}
+    } else {
+      track("share", { method: "copy", ward: WARD });
+      try { await navigator.clipboard.writeText(text); toast("लिंक कॉपी हो गया"); } catch {}
+    }
   }));
 }
 

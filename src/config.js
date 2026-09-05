@@ -8,6 +8,9 @@ export const TURNSTILE_KEY = "0x4AAAAAAEootxb0JN46vQM9";
 // Edge Function का नाम — Supabase डैशबोर्ड में जो दिख रहा है, बिलकुल वही।
 export const VOTE_FN = "smart-processor";
 
+// Google Analytics 4 का Measurement ID (G-XXXXXXXXXX)। खाली छोड़ेंगे तो GA बंद रहेगा।
+export const GA_ID = "";
+
 export const SITE    = "https://pokaranchunav.pages.dev";
 export const WA      = "919079269147";
 export const GATE    = 20;

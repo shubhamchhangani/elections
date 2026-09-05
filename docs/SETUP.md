@@ -114,7 +114,49 @@ repo में पहले से मौजूद हैं। डिज़ा�
 
 ---
 
-## 7️⃣ Adsterra (~10 मिनट, बाद में भी चलेगा)
+## 7️⃣ Google Analytics (~5 मिनट)
+
+यह बताएगा कि कितने लोग आए, किस वार्ड के पेज सबसे ज़्यादा खुले, कितनों ने वोट दिया,
+और कितनों ने आगे शेयर किया।
+
+1. https://analytics.google.com → **Start measuring**
+2. Account name: `Pokaran Chunav` → Next
+3. Property name: `pokaranchunav` · Time zone: **India** · Currency: **INR** → Next
+4. Business details भरें (कुछ भी सामान्य) → Create
+5. Platform: **Web** चुनें
+   - Website URL: `https://pokaranchunav.pages.dev`
+   - Stream name: `pokaranchunav`
+6. बनने के बाद **Measurement ID** मिलेगी — `G-XXXXXXXXXX` जैसी
+7. उसे `src/config.js` की `GA_ID` में डालें:
+   ```js
+   export const GA_ID = "G-XXXXXXXXXX";
+   ```
+8. `npm run build` → commit → push
+
+### आपको क्या-क्या दिखेगा
+
+पेज देखने के अलावा ये घटनाएँ अपने आप दर्ज होती हैं
+(GA → **Reports → Engagement → Events**):
+
+| घटना | कब | इससे क्या पता चलता है |
+|---|---|---|
+| `vote_cast` | वोट दर्ज हुआ | असल में कितने वोट पड़े, किस वार्ड में, किस दल को |
+| `vote_blocked` | वोट रुका | कितने लोग कैप्चा/डुप्लिकेट पर अटके — **कुछ गड़बड़ है तो यहीं दिखेगा** |
+| `gate_shown` | 20 वोट से कम वाला पर्दा दिखा | कितने लोग नतीजा देखे बिना लौटे |
+| `result_shown` | नतीजा दिखा | कितनों तक असली नतीजा पहुँचा |
+| `share` | शेयर बटन दबा | कितने लोगों ने आगे भेजा — **यही वायरल होने की रफ़्तार है** |
+
+**सबसे काम की रिपोर्ट:** GA → **Realtime**। लिंक ग्रुप में डालने के 30 सेकंड बाद
+खोलकर देखें — कितने लोग इसी वक़्त साइट पर हैं। इसी स्क्रीन का स्क्रीनशॉट
+दुकानदारों को दिखाकर विज्ञापन बेचना सबसे आसान पड़ता है।
+
+> अगर `vote_blocked` की गिनती `vote_cast` से ज़्यादा हो जाए तो कुछ टूटा है —
+> `reason` देखें: `captcha_fail` का मतलब Turnstile में गड़बड़, `device_limit` का
+> मतलब लोग बार-बार कोशिश कर रहे हैं।
+
+---
+
+## 8️⃣ Adsterra (~10 मिनट, बाद में भी चलेगा)
 
 1. https://adsterra.com → **Publisher** → Sign up
 2. Add website: `https://pokaranchunav.pages.dev`, category **News**

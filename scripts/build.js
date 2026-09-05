@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SITE, WA } from "../src/config.js";
+import { SITE, WA, GA_ID } from "../src/config.js";
 import { symbolSvg } from "../src/symbols.js";   // एक ही जगह से — दोबारा कभी बेमेल न हो
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -13,6 +13,14 @@ const esc  = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/
 
 /* ── साँचा ───────────────────────────────────────────────────── */
 // og: टैग सबसे ऊपर — WhatsApp सिर्फ़ head के शुरुआती हिस्से को पढ़ता है
+const ga = GA_ID ? `
+<script async src="https://www.googletagmanager.com/gtag/js?id=${GA_ID}"></script>
+<script>
+window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}
+gtag('js',new Date());
+gtag('config','${GA_ID}',{anonymize_ip:true});
+</script>` : "";
+
 const page = ({ title, desc, path, og, body, ward = null, schema = "" }) => `<!doctype html>
 <html lang="hi">
 <head>
@@ -81,7 +89,7 @@ ${body}
 
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <script src="/ads.js" defer></script>
-<script type="module" src="/app.js"></script>
+<script type="module" src="/app.js"></script>${ga}
 </body>
 </html>`;
 
@@ -386,6 +394,16 @@ write("gopniyata-niti.html", page({
     आपके ब्राउज़र से कुछ तकनीकी जानकारी लेता है। इसके लिए
     <a href="https://www.cloudflare.com/application-services/terms/turnstile-privacy-addendum/" rel="noopener" target="_blank">Cloudflare Turnstile Privacy Addendum</a>
     लागू होता है। Turnstile का उपयोग विज्ञापन के लिए नहीं किया जाता।</p>
+  </div>
+
+  <div class="sec">
+    <h2>Google Analytics</h2>
+    <p>यह जानने के लिए कि कितने लोग वेबसाइट पर आए और कौन से वार्ड के पेज ज़्यादा देखे गए,
+    यह वेबसाइट Google Analytics का उपयोग करती है। इससे पता चलता है कि कुल कितने लोग आए,
+    किस पेज पर कितनी देर रुके, और कितने लोगों ने वोट दिया — <b>यह नहीं कि किस व्यक्ति ने किसे वोट दिया</b>।
+    आपका IP पता Google को अधूरा (anonymized) भेजा जाता है। यह जानकारी
+    <a href="https://policies.google.com/privacy" rel="noopener" target="_blank">Google की गोपनीयता नीति</a>
+    के अनुसार संभाली जाती है।</p>
   </div>
 
   <div class="sec">
