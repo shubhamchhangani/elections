@@ -1,23 +1,43 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm";
-import { SUPABASE_URL, SUPABASE_ANON, SITE, GATE, POLL_MS } from "./config.js";
+import { SUPABASE_URL, SUPABASE_ANON, TURNSTILE_KEY, SITE, GATE, POLL_MS } from "./config.js";
 
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
-  auth: { flowType: "pkce", detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
-});
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
+const VOTE_URL = SUPABASE_URL + "/functions/v1/vote";
 
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-const PAGE = document.body.dataset;
-const WARD = PAGE.ward !== undefined ? Number(PAGE.ward) : null;   // 0 = अध्यक्ष
-const PENDING = "pokaran.pending";
+const WARD = document.body.dataset.ward !== undefined ? Number(document.body.dataset.ward) : null;
 
-/* ── उपकरण की पहचान — कड़ी रोक नहीं, सिर्फ़ धांधली की सीमा ── */
-async function deviceHash() {
+/* ── परत 2: पहचान-टोकन — localStorage + cookie दोनों में ─────── */
+const KEY = "pokaran.voter";
+function cookie(name, val) {
+  if (val === undefined) {
+    const m = document.cookie.match(new RegExp("(?:^|; )" + name + "=([^;]*)"));
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+  document.cookie = `${name}=${encodeURIComponent(val)}; max-age=31536000; path=/; SameSite=Lax`;
+}
+function voterToken() {
+  let t = null;
+  try { t = localStorage.getItem(KEY); } catch {}
+  if (!t) t = cookie(KEY);
+  if (!t || !/^[0-9a-f-]{36}$/i.test(t)) {
+    t = (crypto.randomUUID?.() ?? URL.createObjectURL(new Blob()).slice(-36));
+  }
+  try { localStorage.setItem(KEY, t); } catch {}
+  cookie(KEY, t);
+  return t;
+}
+const TOKEN = voterToken();
+
+/* ── परत 3: उपकरण की पहचान ──────────────────────────────────── */
+let _dev;
+async function deviceId() {
+  if (_dev) return _dev;
   const c = document.createElement("canvas");
   c.width = 200; c.height = 40;
   const g = c.getContext("2d");
-  g.textBaseline = "top";
-  g.font = "15px 'Arial'";
+  g.textBaseline = "top"; g.font = "15px Arial";
   g.fillStyle = "#f60"; g.fillRect(0, 0, 100, 20);
   g.fillStyle = "#069"; g.fillText("पोकरण-2026", 2, 4);
   let gpu = "";
@@ -26,20 +46,42 @@ async function deviceHash() {
     const d = gl && gl.getExtension("WEBGL_debug_renderer_info");
     if (d) gpu = gl.getParameter(d.UNMASKED_RENDERER_WEBGL) || "";
   } catch {}
-  const raw = [
-    c.toDataURL(), gpu, navigator.userAgent, navigator.language,
+  const raw = [c.toDataURL(), gpu, navigator.userAgent, navigator.language,
     screen.width, screen.height, screen.colorDepth, devicePixelRatio,
     new Date().getTimezoneOffset(), navigator.hardwareConcurrency || 0,
-    navigator.deviceMemory || 0, navigator.maxTouchPoints || 0
-  ].join("|");
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
-  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 40);
+    navigator.deviceMemory || 0, navigator.maxTouchPoints || 0].join("|");
+  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
+  _dev = [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join("").slice(0, 48);
+  return _dev;
+}
+
+/* ── परत 1: Turnstile — अदृश्य कैप्चा ───────────────────────── */
+let _tsId = null;
+function captcha() {
+  if (!TURNSTILE_KEY || !window.turnstile) return Promise.resolve("");
+  return new Promise(res => {
+    const done = t => res(t || "");
+    if (_tsId === null) {
+      const box = document.createElement("div");
+      box.style.cssText = "position:fixed;left:-9999px;top:0";
+      document.body.appendChild(box);
+      _tsId = window.turnstile.render(box, {
+        sitekey: TURNSTILE_KEY, size: "invisible",
+        callback: done, "error-callback": () => res(""), "timeout-callback": () => res("")
+      });
+      captcha._cb = done;
+    } else {
+      captcha._cb = done;
+      window.turnstile.reset(_tsId);
+    }
+    try { window.turnstile.execute(_tsId); } catch { res(""); }
+    setTimeout(() => res(""), 8000);
+  });
 }
 
 /* ── छोटे सहायक ─────────────────────────────────────────────── */
-const DEV = ["०","१","२","३","४","५","६","७","८","९"];
-const dev = n => String(n).replace(/\d/g, d => DEV[+d]);
-
+const DEVN = ["०","१","२","३","४","५","६","७","८","९"];
+const dev = n => String(n).replace(/\d/g, d => DEVN[+d]);
 function toast(msg, ms = 3200) {
   let t = $(".toast");
   if (!t) { t = document.createElement("div"); t.className = "toast"; document.body.appendChild(t); }
@@ -49,28 +91,18 @@ function toast(msg, ms = 3200) {
   toast._t = setTimeout(() => t.classList.remove("on"), ms);
 }
 
-async function signIn() {
-  const { error } = await sb.auth.signInWithOAuth({
-    provider: "google",
-    options: { redirectTo: location.origin + location.pathname, queryParams: { prompt: "select_account" } }
-  });
-  if (error) toast("लॉगिन शुरू नहीं हो सका। दोबारा कोशिश करें।");
-}
-
 /* ── मतपत्र दिखाना ──────────────────────────────────────────── */
 const state = { phase: null, counts: {}, total: 0, mine: null, busy: false };
 
 function paint() {
   const rows = $$(".row");
   const showResult = state.phase !== "frozen" && state.total >= GATE;
-
   $$("[data-phase]").forEach(el => el.classList.toggle("hide", el.dataset.phase !== state.phase));
 
   rows.forEach(r => {
     const key = r.dataset.choice;
     const n = state.counts[key] || 0;
     const pct = state.total ? Math.round((n / state.total) * 100) : 0;
-
     r.classList.toggle("chosen", state.mine === key);
     if (state.phase !== "live" || state.mine !== null) r.dataset.locked = "1";
     else delete r.dataset.locked;
@@ -106,92 +138,79 @@ function paint() {
   if (lead) {
     lead.classList.toggle("hide", !showResult);
     if (showResult) {
-      const best = rows
-        .map(r => ({ r, n: state.counts[r.dataset.choice] || 0 }))
-        .sort((a, b) => b.n - a.n)[0];
+      const best = rows.map(r => ({ r, n: state.counts[r.dataset.choice] || 0 }))
+                       .sort((a, b) => b.n - a.n)[0];
       if (best && best.n > 0) {
         const src = $(".chinh img", best.r), fb = $(".chinh .fallback", best.r);
         const box = $(".body .art", lead);
         if (box) box.innerHTML = src ? `<img src="${src.getAttribute("src")}" alt="">`
                                      : `<div class="fallback">${fb ? fb.textContent : ""}</div>`;
         $(".leader .naam").textContent = $(".who .naam", best.r).textContent;
-        $(".leader .meta").textContent = $(".who .dal", best.r).textContent;
-        $(".leader .meta").style.color = getComputedStyle($(".who .dal", best.r)).color;
+        const dalEl = $(".who .dal", best.r);
+        $(".leader .meta").textContent = dalEl.textContent;
+        $(".leader .meta").style.color = getComputedStyle(dalEl).color;
         $(".leader .big").textContent = dev(Math.round((best.n / state.total) * 100)) + "%";
         $(".leader .big").style.color = getComputedStyle(best.r).color;
       }
     }
   }
-
   $$("[data-total]").forEach(el => el.textContent = dev(state.total));
 }
 
 async function refresh() {
   if (WARD === null) return;
-  const { data, error } = await sb.rpc("get_counts", { p_ward: WARD });
-  if (error) return;
+  const { data, error } = await sb.rpc("get_counts", { p_ward: WARD, p_token: TOKEN });
+  if (error || !data) return;
   state.phase  = data.phase;
   state.counts = data.counts || {};
   state.total  = data.total || 0;
+  state.mine   = data.mine || null;
   paint();
-}
-
-async function loadMine() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session || WARD === null) { state.mine = null; return; }
-  const { data } = await sb.rpc("my_vote", { p_ward: WARD });
-  state.mine = data && data.choice ? data.choice : null;
 }
 
 /* ── मत डालना ───────────────────────────────────────────────── */
 const MSG = {
-  no_auth:      "वोट दर्ज करने के लिए Google लॉगिन ज़रूरी है।",
   closed:       "मतदान बंद हो चुका है।",
   already:      "इस वार्ड में आपका वोट पहले ही दर्ज है।",
-  device_limit: "इस फ़ोन से इस वार्ड के 3 वोट पहले ही दर्ज हैं।",
+  device_limit: "इस फ़ोन से इस वार्ड के ३ वोट पहले ही दर्ज हैं।",
   rate:         "अभी बहुत ट्रैफ़िक है। एक मिनट बाद कोशिश करें।",
-  bad_ward:     "गड़बड़ी हुई। पेज दोबारा खोलें."
+  captcha_fail: "जाँच पूरी नहीं हुई। पेज दोबारा खोलकर कोशिश करें।",
+  no_captcha:   "जाँच पूरी नहीं हुई। पेज दोबारा खोलकर कोशिश करें।",
+  bad_ward:     "गड़बड़ी हुई। पेज दोबारा खोलें।"
 };
 
 async function vote(choice, row) {
-  if (state.busy) return;
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) {
-    localStorage.setItem(PENDING, JSON.stringify({ ward: WARD, choice }));
-    await signIn();
-    return;
-  }
+  if (state.busy || state.phase !== "live") return;
   state.busy = true;
   if (row) { row.classList.add("chosen", "flash"); setTimeout(() => row.classList.remove("flash"), 2800); }
 
-  const { data, error } = await sb.rpc("cast_vote", {
-    p_ward: WARD, p_choice: choice, p_device: await deviceHash()
-  });
+  let out;
+  try {
+    const [device, ts] = await Promise.all([deviceId(), captcha()]);
+    const r = await fetch(VOTE_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json", apikey: SUPABASE_ANON,
+                 authorization: "Bearer " + SUPABASE_ANON },
+      body: JSON.stringify({ ward: WARD, choice, token: TOKEN, device, ts })
+    });
+    out = await r.json();
+  } catch {
+    state.busy = false;
+    if (row) row.classList.remove("chosen", "flash");
+    toast("नेटवर्क धीमा है। दोबारा कोशिश करें।");
+    return;
+  }
   state.busy = false;
 
-  if (error) { if (row) row.classList.remove("chosen", "flash"); toast("नेटवर्क धीमा है। दोबारा कोशिश करें।"); return; }
-
-  if (data.ok) {
+  if (out.ok) {
     state.mine = choice;
     toast("आपका वोट दर्ज हो गया ✓");
   } else {
-    if (data.code === "already") state.mine = data.choice || null;
+    if (out.code === "already") state.mine = out.choice || null;
     else if (row) row.classList.remove("chosen", "flash");
-    toast(MSG[data.code] || "वोट दर्ज नहीं हो सका।");
+    toast(MSG[out.code] || "वोट दर्ज नहीं हो सका।");
   }
   await refresh();
-}
-
-async function flushPending() {
-  const raw = localStorage.getItem(PENDING);
-  if (!raw) return;
-  localStorage.removeItem(PENDING);
-  try {
-    const p = JSON.parse(raw);
-    if (p.ward !== WARD) return;
-    const row = $$(".row").find(r => r.dataset.choice === p.choice);
-    await vote(p.choice, row);
-  } catch {}
 }
 
 /* ── साझा करना ──────────────────────────────────────────────── */
@@ -203,28 +222,19 @@ function wireShare() {
   $$("[data-share]").forEach(b => b.addEventListener("click", async e => {
     e.preventDefault();
     const text = shareText();
-    if (b.dataset.share === "wa") {
-      location.href = "https://wa.me/?text=" + encodeURIComponent(text);
-    } else if (navigator.share) {
-      try { await navigator.share({ text }); } catch {}
-    } else {
-      try { await navigator.clipboard.writeText(text); toast("लिंक कॉपी हो गया"); } catch {}
-    }
+    if (b.dataset.share === "wa") location.href = "https://wa.me/?text=" + encodeURIComponent(text);
+    else if (navigator.share) { try { await navigator.share({ text }); } catch {} }
+    else { try { await navigator.clipboard.writeText(text); toast("लिंक कॉपी हो गया"); } catch {} }
   }));
 }
 
 /* ── शुरुआत ─────────────────────────────────────────────────── */
 async function boot() {
   wireShare();
-  $$("[data-signin]").forEach(b => b.addEventListener("click", e => { e.preventDefault(); signIn(); }));
-  $$("[data-signout]").forEach(b => b.addEventListener("click", async e => {
-    e.preventDefault(); await sb.auth.signOut(); state.mine = null; paint(); toast("लॉगआउट हो गया");
-  }));
-
   $$(".row").forEach(r => r.addEventListener("click", () => {
     if (r.dataset.locked || state.phase !== "live") {
       if (state.mine) toast("इस वार्ड में आपका वोट पहले ही दर्ज है।");
-      else if (state.phase === "frozen") toast("मतदान बंद है। नतीजे 9 सितंबर शाम 6 बजे।");
+      else if (state.phase === "frozen") toast("मतदान बंद है। नतीजे ९ सितम्बर शाम ६ बजे।");
       else if (state.phase === "result") toast("मतदान समाप्त हो चुका है।");
       return;
     }
@@ -232,18 +242,13 @@ async function boot() {
   }));
 
   await refresh();
-  await loadMine();
-  paint();
-  await flushPending();
-
-  sb.auth.onAuthStateChange(async (_e, s) => {
-    if (s) { await loadMine(); paint(); }
-  });
-
   setInterval(() => { if (document.visibilityState === "visible") refresh(); }, POLL_MS);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") refresh();
   });
 }
+
+// Turnstile का callback वैश्विक होना चाहिए
+window.onTurnstileCb = t => captcha._cb && captcha._cb(t);
 
 if (WARD !== null) boot(); else wireShare();
