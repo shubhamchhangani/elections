@@ -357,6 +357,13 @@ async function boot() {
   dbg("शुरू | ward=" + WARD + " | token=" + TOKEN.slice(0, 8) + "… | turnstile key=" + (TURNSTILE_KEY ? "है" : "नहीं"));
   tsWaitScript().then(ok => { if (ok) tsRender(); });
 
+  sb.rpc("get_totals").then(({ data }) => {
+    const g = data && data.grand;
+    if (!g || g < 100) return;                       // कम संख्या उल्टा असर करती है
+    $$("[data-grand]").forEach(el => animateNum(el, g));
+    $$(".pitch-proof").forEach(el => el.classList.remove("hide"));
+  }).catch(() => {});
+
   await refresh();
   setInterval(() => { if (document.visibilityState === "visible") refresh(); }, POLL_MS);
   document.addEventListener("visibilitychange", () => {

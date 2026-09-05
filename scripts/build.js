@@ -21,6 +21,25 @@ gtag('js',new Date());
 gtag('config','${GA_ID}',{anonymize_ip:true});
 </script>` : "";
 
+
+const pitch = `
+<div class="pitch">
+  <div class="wrap">
+    <div class="pitch-t">
+      <b>अपने व्यवसाय का विज्ञापन यहाँ लगवाएँ</b>
+      <span class="pitch-proof hide">अब तक <b data-grand>0</b> लोग वोट दे चुके हैं</span>
+      <span class="pitch-sub">दुकान · कोचिंग · शोरूम · होटल — पोकरण के लोगों तक सीधे पहुँचें</span>
+    </div>
+    <div class="pitch-b">
+      <a class="pitch-wa" href="https://wa.me/${WA}?text=${encodeURIComponent("पोकरण चुनाव वेबसाइट पर विज्ञापन के बारे में जानकारी चाहिए")}" rel="noopener" target="_blank">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.5 14.1c-.2.7-1.3 1.3-1.9 1.4-.5.1-1.1.1-1.8-.1-.4-.1-1-.3-1.7-.6-3-1.3-4.9-4.3-5.1-4.5-.1-.2-1.2-1.5-1.2-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.3.5-.3.3c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.2.4-.2.6-.1l2 .9c.2.1.4.2.4.3.1.2.1.7-.1 1.3Z"/></svg>
+        WhatsApp करें
+      </a>
+      <a class="pitch-tel" href="tel:+${WA}">${WA.replace(/^91/, "")}</a>
+    </div>
+  </div>
+</div>`;
+
 const page = ({ title, desc, path, og, body, ward = null, schema = "" }) => `<!doctype html>
 <html lang="hi">
 <head>
@@ -59,6 +78,8 @@ ${schema}
 <div class="status live hide" data-phase="live"><span class="dot"></span> मतदान चालू · 7 सितम्बर शाम 6 बजे तक</div>
 <div class="status frozen hide" data-phase="frozen">मतदान बंद · नतीजे 9 सितम्बर शाम 6 बजे</div>
 <div class="status result hide" data-phase="result">अंतिम नतीजे · मतदान समाप्त</div>
+
+${pitch}
 
 <main class="wrap">
 ${body}
