@@ -62,71 +62,306 @@ a{color:var(--evm)}
 .status.live .dot{animation:blink 1.8s ease-in-out infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
 
+/* ── विज्ञापन के लिए न्यौता — साइट का अपना, विज्ञापन नहीं ──── */
+.pitch{border-bottom:1px solid var(--rule);background:#FFF9EC}
+.pitch .wrap{display:flex;align-items:center;gap:10px;padding:8px 14px;flex-wrap:wrap}
+.pitch-t{flex:1 1 210px;min-width:0}
+.pitch-t b{display:block;font-family:"Martel",Georgia,serif;font-size:15px;line-height:1.25;color:var(--ink)}
+.pitch-sub{display:none}
+.pitch-proof{display:block;font-size:12.5px;color:#8A5A00;font-weight:600;margin-top:2px}
+.pitch-proof b{display:inline;font-family:inherit;font-size:inherit;font-variant-numeric:tabular-nums}
+.pitch-b{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.pitch-wa{
+  display:inline-flex;align-items:center;gap:6px;
+  background:#1DA851;color:#fff;text-decoration:none;font-weight:700;font-size:13.5px;
+  padding:9px 13px;border:1.5px solid #0F6B32;white-space:nowrap;
+  transition:transform .12s,filter .15s;
+}
+.pitch-wa:active{transform:translateY(1px) scale(.98);filter:brightness(.95)}
+.pitch-tel{
+  font-weight:700;font-size:14px;color:var(--evm-dark);text-decoration:none;
+  border-bottom:2px solid var(--evm);white-space:nowrap;font-variant-numeric:tabular-nums;
+}
+@media (min-width:560px){ .pitch-sub{display:block;font-size:12px;color:var(--ink-soft);line-height:1.35;margin-top:2px} }
+@media (max-width:380px){ .pitch .wrap{gap:8px} .pitch-t b{font-size:14px} .pitch-wa{padding:8px 11px;font-size:13px} }
+
+/* ── पृष्ठ शीर्षक ────────────────────────────── */
+.head{padding:22px 0 16px}
+.head h1{
+  font-family:"Martel",Georgia,serif;font-weight:800;
+  font-size:clamp(28px,8.5vw,38px);line-height:1.15;margin:0 0 6px;
+  letter-spacing:-.01em;
+}
+.head .kshetra{margin:0;color:var(--ink-soft);font-size:15.5px;line-height:1.45}
+.head .sub{margin:8px 0 0;color:var(--ink-soft);font-size:15px}
+
+/* ── मतपत्र ──────────────────────────────────── */
+.ballot{
+  background:var(--paper-2);
+  border:2px solid var(--rule);
+  margin:0 0 20px;
+}
+.ballot-head{
+  border-bottom:1px solid var(--rule);
+  padding:9px 12px;font-size:13px;font-weight:700;color:var(--ink-soft);
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+}
+.ballot-head span:last-child{font-weight:400;font-variant-numeric:tabular-nums}
+
+.row{
+  position:relative;
+  display:grid;
+  grid-template-columns:38px 1fr 62px var(--tap);
+  align-items:stretch;
+  border-bottom:1px solid var(--rule);
+  background:none;border-left:0;border-right:0;border-top:0;
+  width:100%;padding:0;margin:0;
+  font:inherit;color:inherit;text-align:right;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  transition:background-color .16s ease;
+}
+.row:not([data-locked]):active{background-color:#F1EEE6}
+.row:not([data-locked]):active .serial{background-color:#F1EEE6}
+.row:last-child{border-bottom:0}
+.row[data-locked]{cursor:default}
+.row:focus-visible{outline:3px solid var(--evm);outline-offset:-3px}
+
+/* परिणाम की पट्टी — मतपत्र की पंक्ति ही चार्ट बन जाती है */
+.fill{
+  position:absolute;inset:0 auto 0 0;width:0;
+  background:currentColor;opacity:.14;
+  transition:width .55s cubic-bezier(.22,.9,.28,1);
+  pointer-events:none;
+}
+.row[data-dal="bjp"]{color:var(--bjp)}
+.row[data-dal="inc"]{color:var(--inc)}
+.row[data-dal="ind"]{color:var(--ind)}
+
+.serial{
+  border-right:1px solid var(--rule);
+  display:flex;align-items:center;justify-content:center;
+  font-family:"Martel",Georgia,serif;font-weight:700;font-size:19px;
+  color:var(--ink);position:relative;
+}
+.who{
+  padding:11px 10px;text-align:right;min-width:0;position:relative;
+  display:flex;flex-direction:column;justify-content:center;
+}
+.who .naam{
+  font-family:"Martel",Georgia,serif;font-weight:700;
+  font-size:21px;line-height:1.25;color:var(--ink);
+  overflow-wrap:anywhere;
+}
+.who .dal{font-size:13.5px;font-weight:600;line-height:1.3;margin-top:2px}
+.row[data-dal="bjp"] .dal{color:#C24C0C}
+.row[data-dal="inc"] .dal{color:#146298}
+.row[data-dal="ind"] .dal{color:var(--ind)}
+
+.chinh{
+  border-left:1px solid var(--rule);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;padding:6px 3px;position:relative;background:rgba(255,255,255,.5);
+}
+.chinh .sym{width:38px;height:38px;display:block}
+.chinh .sym svg{width:100%;height:100%;display:block}
+.chinh small{font-size:10.5px;color:var(--ink-soft);line-height:1.15;text-align:center}
+
+/* EVM का बटन + बत्ती */
+.btn-cell{
+  border-left:1px solid var(--rule);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;background:#EFEDE7;
+}
+.lamp{
+  position:absolute;top:7px;left:50%;transform:translateX(-50%);
+  width:8px;height:8px;border-radius:50%;
+  background:#CFC9BE;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18);
+}
+.evm-btn{
+  width:26px;height:26px;border-radius:50%;
+  background:var(--evm);box-shadow:0 2px 0 var(--evm-dark);
+  margin-top:8px;
+  transition:transform .12s cubic-bezier(.2,.8,.3,1),background-color .25s,box-shadow .12s;
+}
+.row:not([data-locked]):active .evm-btn{transform:translateY(2px) scale(.92);box-shadow:0 0 0 var(--evm-dark)}
+.lamp{transition:background-color .18s,box-shadow .25s}
+
+/* भेजा जा रहा है */
+.row.sending .evm-btn{animation:sending .9s ease-in-out infinite}
+@keyframes sending{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.86);opacity:.6}}
+
+/* मत दर्ज होने पर: लाल बत्ती जलती है */
+.row.chosen .lamp{background:var(--lamp);box-shadow:0 0 9px 2px rgba(200,30,30,.75)}
+.row.chosen .evm-btn{background:var(--lamp);box-shadow:0 2px 0 #8E1414}
+.row.flash .lamp{animation:lampon .9s steps(1) 3}
+@keyframes lampon{0%{background:var(--lamp);box-shadow:0 0 12px 3px rgba(200,30,30,.85)}50%{background:#CFC9BE;box-shadow:none}}
+
+/* परिणाम मोड में प्रतिशत */
+.pct{
+  border-left:1px solid var(--rule);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-variant-numeric:tabular-nums;background:#EFEDE7;
+}
+.pct b{font-family:"Martel",Georgia,serif;font-size:17px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.pct small{font-size:10.5px;color:var(--ink-soft);line-height:1.2}
+
+/* ── आगे चल रहे हैं — स्क्रीनशॉट वाला कार्ड ──── */
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.leader:not(.hide),.gate:not(.hide){animation:rise .34s cubic-bezier(.2,.8,.3,1)}
+
+.leader{
+  border:2px solid var(--rule);background:var(--paper-2);
+  margin:0 0 16px;overflow:hidden;
+}
+.leader .cap{
+  background:var(--rule);color:#fff;padding:7px 12px;
+  font-size:13px;font-weight:700;letter-spacing:.02em;
+  display:flex;justify-content:space-between;gap:10px;
+}
+.leader .cap span:last-child{font-weight:400;color:#C9C3B8}
+.leader .body{padding:15px 14px;display:flex;align-items:center;gap:13px}
+.leader .body .art{width:58px;height:58px;flex:none}
+.leader .body .sym{width:58px;height:58px;display:block}
+.leader .body .sym svg{width:100%;height:100%;display:block}
+.leader .naam{font-family:"Martel",Georgia,serif;font-weight:800;font-size:27px;line-height:1.15;margin:0}
+.leader .meta{font-size:14.5px;font-weight:600;margin:3px 0 0}
+.leader .big{
+  font-variant-numeric:tabular-nums;
+  font-family:"Martel",Georgia,serif;font-weight:800;
+  font-size:34px;line-height:1;margin-left:auto;font-variant-numeric:tabular-nums;
+}
+.leader .foot{
+  border-top:1px solid var(--rule);padding:7px 12px;
+  font-size:11.5px;color:var(--ink-soft);
+  display:flex;justify-content:space-between;gap:10px;
+}
+.leader .foot b{color:var(--ink);font-weight:700}
+
+/* ── द्वार: 20 वोट से कम ──────────────────────── */
+.gate{
+  border:2px dashed var(--rule);background:#FFFDF5;
+  padding:20px 16px;text-align:center;margin:0 0 16px;
+}
+.gate .count{font-family:"Martel",Georgia,serif;font-weight:800;font-size:40px;line-height:1;margin:0;font-variant-numeric:tabular-nums}
+.gate p{margin:8px 0 0;font-size:15.5px;line-height:1.5}
+.gate .track{height:8px;background:#E5E0D4;margin:14px 0 0;border:1px solid var(--rule-soft)}
+.gate .track i{display:block;height:100%;background:var(--evm);transition:width .55s cubic-bezier(.22,.9,.28,1)}
+
+/* ── वार्ड की जाली ───────────────────────────── */
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:0 0 8px}
+.grid a{
+  aspect-ratio:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:1px;
+  border:1.5px solid var(--rule);background:var(--paper-2);
+  text-decoration:none;color:var(--ink);
+  font-family:"Martel",Georgia,serif;font-weight:700;font-size:21px;line-height:1;
+}
+.grid a small{font-family:"Mukta",sans-serif;font-weight:600;font-size:9.5px;color:var(--ink-soft);letter-spacing:.02em}
+.grid a{transition:background-color .14s,color .14s,transform .12s}
+.grid a:active{background:var(--evm);color:#fff;transform:scale(.95)}
+.grid a:active small{color:#C9D8EA}
+.grid a:focus-visible{outline:3px solid var(--evm);outline-offset:2px}
+
+/* ── बटन ─────────────────────────────────────── */
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  width:100%;min-height:var(--tap);padding:14px 18px;
+  border:2px solid var(--rule);background:var(--evm);color:#fff;
+  font:inherit;font-weight:700;font-size:17px;
+  text-decoration:none;cursor:pointer;margin:0 0 10px;
+}
+.btn{transition:transform .12s cubic-bezier(.2,.8,.3,1),filter .15s}
+.btn:active{transform:translateY(1px) scale(.985);filter:brightness(.95)}
+.btn.wa{background:#1DA851;border-color:#0F6B32}
+.btn.ghost{background:var(--paper-2);color:var(--ink)}
+.btn:focus-visible{outline:3px solid var(--lamp);outline-offset:2px}
+.btn svg{flex:none}
+
+/* ── खण्ड ────────────────────────────────────── */
+.sec{margin:26px 0}
+.sec h2{
+  font-family:"Martel",Georgia,serif;font-weight:800;font-size:21px;
+  margin:0 0 10px;padding-bottom:7px;border-bottom:2px solid var(--rule);
+}
+.sec p{margin:0 0 11px;max-width:62ch}
+.sec ul{margin:0 0 11px;padding-right:20px;padding-left:0;list-style-position:outside}
+
+.note{
+  border-right:4px solid var(--evm);background:#F1F4F8;
+  padding:12px 14px;font-size:15px;margin:0 0 14px;
+}
+.note.warn{border-right-color:var(--lamp);background:#FBF1F1}
+
 /* ── विज्ञापन ─────────────────────────────────────────── */
 /* ख़ाली जगह कुछ नहीं दिखाती — भरने पर ही जगह लेती है */
-.ad{display:none;position:relative}
+.ad{display:none}
 .ad.has-ad,.ad.has-sponsor,.ad.has-house{
-  display:block;margin:16px 0;overflow:visible;
+  display:block;margin:18px 0;overflow:visible;
 }
 .ad.has-ad{
   display:flex;align-items:center;justify-content:center;
   border:1px solid var(--rule-soft);background:#F5F3EE;
   padding:4px 0;overflow:visible;
+  /* Adcash ads अपना size खुद set करते हैं — min-height JS से आता है */
+}
+.ad-top.has-ad,.ad-top.has-sponsor,.ad-top.has-house{
+  margin:10px 0 6px;
 }
 
-/* ── top slot ── */
-.ad-top.has-ad,.ad-top.has-sponsor,.ad-top.has-house{margin:10px 0 6px}
-.ad-top.has-ad{min-height:280px}
-@media(min-width:480px){.ad-top.has-ad{min-height:60px}}
-@media(min-width:769px){.ad-top.has-ad{min-height:90px}}
+/* after slot — ballot के बाद 336x280, center में */
+.ad-after.has-ad{
+  justify-content:center;
+  min-height:280px;
+}
 
-/* ── after slot ── */
-.ad-after.has-ad{min-height:280px;justify-content:center}
+/* mid slot — Video Slider को overflow चाहिए */
+.ad-mid.has-ad{
+  overflow:visible;
+  min-height:250px;
+}
 
-/* ── mid slot ── */
-.ad-mid.has-ad{overflow:visible;min-height:280px}
+/* bottom slot — 468x60 footer banner */
+.ad-bottom.has-ad{
+  min-height:60px;
+}
 
-/* ── bottom slot ── */
-.ad-bottom.has-ad{min-height:280px}
-@media(min-width:480px){.ad-bottom.has-ad{min-height:60px}}
-@media(min-width:769px){.ad-bottom.has-ad{min-height:90px}}
-
-/* ── footer ads ── */
-.ad-footer.has-ad{min-height:280px}
-@media(min-width:769px){.ad-footer.has-ad{min-height:90px}}
-
-/* विज्ञापन label */
-.ad.has-ad::before{
-  content:'विज्ञापन';
-  position:absolute;top:2px;right:6px;
+/* विज्ञापन का लेबल — UX: user को पता रहे यह ad है */
+.ad.has-ad::before,.ad.has-sponsor::before{
+  content:"विज्ञापन";
+  position:absolute;
   font-size:9px;font-weight:600;letter-spacing:.08em;
-  color:var(--ink-soft);opacity:.5;pointer-events:none;
+  color:var(--ink-soft);opacity:.6;
+  top:2px;right:6px;
+  pointer-events:none;
 }
+.ad{position:relative}
 
-/* दुकान का बैनर */
+/* दुकान का बैनर — पूरी चौड़ाई, अनुपात अपने आप */
 .ad.has-sponsor{border:1.5px solid var(--rule);background:var(--paper-2)}
 .sponsor{display:block;width:100%;line-height:0}
 .sponsor img{width:100%;height:auto;display:block}
 
-/* अपना न्यौता */
+/* अपना न्यौता — जब कोई प्रायोजक न हो */
 .ad.has-house{border:1.5px dashed var(--rule-soft);background:#FCFBF7}
 .house{display:block;width:100%;padding:11px 14px;text-decoration:none;text-align:center}
-.house b{display:block;font-family:'Martel',Georgia,serif;font-size:15px;line-height:1.35;color:var(--ink)}
+.house b{display:block;font-family:"Martel",Georgia,serif;font-size:15px;line-height:1.35;color:var(--ink)}
 .house i{font-style:normal;font-weight:700;color:#8A5A00}
 .house i b{font-variant-numeric:tabular-nums}
 .house span{display:block;font-size:12.5px;color:var(--ink-soft);margin-top:3px}
 
-/* footer area */
+/* तलहटी के नीचे का विज्ञापन क्षेत्र */
 .footads{margin:0 0 24px}
 .footads .ad{margin:10px 0}
 
-/* sticky bar */
+/* नीचे चिपकी पट्टी — भरने पर ही दिखती है */
 .stick{display:none}
 .stick.has-ad,.stick.has-sponsor{
   display:flex;align-items:center;justify-content:center;
   position:fixed;left:0;right:0;bottom:0;z-index:40;
   background:#F5F3EE;border-top:1px solid var(--rule);
   padding:3px 0;min-height:56px;
+  /* smooth slide-in */
   animation:stickIn .35s ease-out;
 }
 @keyframes stickIn{from{transform:translateY(100%)}to{transform:translateY(0)}}
@@ -137,6 +372,8 @@ a{color:var(--evm)}
   display:flex;align-items:center;justify-content:center;padding:0;
 }
 body.has-stick{padding-bottom:62px}
+
+
 
 /* ── तलहटी ───────────────────────────────────── */
 footer{
