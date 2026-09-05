@@ -461,4 +461,4 @@ writeFileSync(join(OUT, "favicon.svg"),
 `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#000"/><rect x="10" y="14" width="44" height="36" fill="#FBFAF7"/><rect x="10" y="14" width="10" height="36" fill="#12457E"/><rect x="26" y="22" width="22" height="4" fill="#1C1814"/><rect x="26" y="31" width="22" height="4" fill="#1C1814"/><rect x="26" y="40" width="14" height="4" fill="#1C1814"/></svg>`);
 
 console.log(`✓ ${pages.length} पृष्ठ बने → dist/`);
-console.log(`  ${urls.length} URLs · sitemap · robots · _redirects · _headers`);
+console.log(`  ${urls.length} URLs · sitemap · robots · _headers`);
