@@ -23,6 +23,7 @@
 html{-webkit-text-size-adjust:100%}
 body{
   margin:0;
+  touch-action:manipulation;
   background:var(--paper);
   color:var(--ink);
   font-family:"Mukta",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -94,7 +95,10 @@ a{color:var(--evm)}
   font:inherit;color:inherit;text-align:right;
   cursor:pointer;
   -webkit-tap-highlight-color:transparent;
+  transition:background-color .16s ease;
 }
+.row:not([data-locked]):active{background-color:#F1EEE6}
+.row:not([data-locked]):active .serial{background-color:#F1EEE6}
 .row:last-child{border-bottom:0}
 .row[data-locked]{cursor:default}
 .row:focus-visible{outline:3px solid var(--evm);outline-offset:-3px}
@@ -103,7 +107,7 @@ a{color:var(--evm)}
 .fill{
   position:absolute;inset:0 auto 0 0;width:0;
   background:currentColor;opacity:.14;
-  transition:width .7s cubic-bezier(.2,.7,.3,1);
+  transition:width .55s cubic-bezier(.22,.9,.28,1);
   pointer-events:none;
 }
 .row[data-dal="bjp"]{color:var(--bjp)}
@@ -154,8 +158,14 @@ a{color:var(--evm)}
   width:26px;height:26px;border-radius:50%;
   background:var(--evm);box-shadow:0 2px 0 var(--evm-dark);
   margin-top:8px;
+  transition:transform .12s cubic-bezier(.2,.8,.3,1),background-color .25s,box-shadow .12s;
 }
-.row:active .evm-btn{transform:translateY(2px);box-shadow:0 0 0 var(--evm-dark)}
+.row:not([data-locked]):active .evm-btn{transform:translateY(2px) scale(.92);box-shadow:0 0 0 var(--evm-dark)}
+.lamp{transition:background-color .18s,box-shadow .25s}
+
+/* भेजा जा रहा है */
+.row.sending .evm-btn{animation:sending .9s ease-in-out infinite}
+@keyframes sending{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.86);opacity:.6}}
 
 /* मत दर्ज होने पर: लाल बत्ती जलती है */
 .row.chosen .lamp{background:var(--lamp);box-shadow:0 0 9px 2px rgba(200,30,30,.75)}
@@ -169,10 +179,13 @@ a{color:var(--evm)}
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   font-variant-numeric:tabular-nums;background:#EFEDE7;
 }
-.pct b{font-family:"Martel",Georgia,serif;font-size:17px;font-weight:800;line-height:1.1}
+.pct b{font-family:"Martel",Georgia,serif;font-size:17px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
 .pct small{font-size:10.5px;color:var(--ink-soft);line-height:1.2}
 
 /* ── आगे चल रहे हैं — स्क्रीनशॉट वाला कार्ड ──── */
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.leader:not(.hide),.gate:not(.hide){animation:rise .34s cubic-bezier(.2,.8,.3,1)}
+
 .leader{
   border:2px solid var(--rule);background:var(--paper-2);
   margin:0 0 16px;overflow:hidden;
@@ -190,6 +203,7 @@ a{color:var(--evm)}
 .leader .naam{font-family:"Martel",Georgia,serif;font-weight:800;font-size:27px;line-height:1.15;margin:0}
 .leader .meta{font-size:14.5px;font-weight:600;margin:3px 0 0}
 .leader .big{
+  font-variant-numeric:tabular-nums;
   font-family:"Martel",Georgia,serif;font-weight:800;
   font-size:34px;line-height:1;margin-left:auto;font-variant-numeric:tabular-nums;
 }
@@ -205,10 +219,10 @@ a{color:var(--evm)}
   border:2px dashed var(--rule);background:#FFFDF5;
   padding:20px 16px;text-align:center;margin:0 0 16px;
 }
-.gate .count{font-family:"Martel",Georgia,serif;font-weight:800;font-size:40px;line-height:1;margin:0}
+.gate .count{font-family:"Martel",Georgia,serif;font-weight:800;font-size:40px;line-height:1;margin:0;font-variant-numeric:tabular-nums}
 .gate p{margin:8px 0 0;font-size:15.5px;line-height:1.5}
 .gate .track{height:8px;background:#E5E0D4;margin:14px 0 0;border:1px solid var(--rule-soft)}
-.gate .track i{display:block;height:100%;background:var(--evm);transition:width .5s}
+.gate .track i{display:block;height:100%;background:var(--evm);transition:width .55s cubic-bezier(.22,.9,.28,1)}
 
 /* ── वार्ड की जाली ───────────────────────────── */
 .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:0 0 8px}
@@ -220,7 +234,8 @@ a{color:var(--evm)}
   font-family:"Martel",Georgia,serif;font-weight:700;font-size:21px;line-height:1;
 }
 .grid a small{font-family:"Mukta",sans-serif;font-weight:600;font-size:9.5px;color:var(--ink-soft);letter-spacing:.02em}
-.grid a:active{background:var(--evm);color:#fff}
+.grid a{transition:background-color .14s,color .14s,transform .12s}
+.grid a:active{background:var(--evm);color:#fff;transform:scale(.95)}
 .grid a:active small{color:#C9D8EA}
 .grid a:focus-visible{outline:3px solid var(--evm);outline-offset:2px}
 
@@ -232,7 +247,8 @@ a{color:var(--evm)}
   font:inherit;font-weight:700;font-size:17px;
   text-decoration:none;cursor:pointer;margin:0 0 10px;
 }
-.btn:active{transform:translateY(1px)}
+.btn{transition:transform .12s cubic-bezier(.2,.8,.3,1),filter .15s}
+.btn:active{transform:translateY(1px) scale(.985);filter:brightness(.95)}
 .btn.wa{background:#1DA851;border-color:#0F6B32}
 .btn.ghost{background:var(--paper-2);color:var(--ink)}
 .btn:focus-visible{outline:3px solid var(--lamp);outline-offset:2px}

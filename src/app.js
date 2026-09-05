@@ -110,6 +110,27 @@ async function captcha() {
   });
 }
 
+/* ── Google Analytics की घटनाएँ ─────────────────────────────── */
+const track = (name, props) => {
+  try { if (window.gtag) window.gtag("event", name, props || {}); } catch {}
+};
+
+/* ── फ़ोन में हल्का कंपन — टैप का तुरंत एहसास ──────────────── */
+const haptic = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch {} };
+
+/* ── अंक धीरे-धीरे बदलें, झटके से नहीं ─────────────────────── */
+function animateNum(el, to, suffix = "") {
+  const from = parseInt(el.textContent, 10);
+  if (!Number.isFinite(from) || from === to) { el.textContent = to + suffix; return; }
+  const t0 = performance.now(), dur = 420;
+  (function step(t) {
+    const k = Math.min(1, (t - t0) / dur);
+    const e = 1 - Math.pow(1 - k, 3);
+    el.textContent = Math.round(from + (to - from) * e) + suffix;
+    if (k < 1) requestAnimationFrame(step);
+  })(t0);
+}
+
 /* ── जाँच के लिए: URL में ?debug=1 लगाएँ ────────────────────── */
 const DEBUG = new URLSearchParams(location.search).has("debug");
 function dbg(msg) {
@@ -161,7 +182,7 @@ function paint() {
       pctCell.classList.toggle("hide", !showResult);
       btnCell.classList.toggle("hide", showResult);
       if (showResult) {
-        $("b", pctCell).textContent = dev(pct) + "%";
+        animateNum($("b", pctCell), pct, "%");
         $("small", pctCell).textContent = dev(n) + " वोट";
       }
     }
@@ -175,7 +196,7 @@ function paint() {
     gate.classList.toggle("hide", !need);
     if (need && !paint._sawGate) { paint._sawGate = true; track("gate_shown", { ward: WARD, total: state.total }); }
     if (need) {
-      $(".count", gate).textContent = dev(state.total);
+      animateNum($(".count", gate), state.total);
       $(".track i", gate).style.width = Math.min(100, (state.total / GATE) * 100) + "%";
       $$("p", gate)[1].textContent = state.mine
         ? `आपका वोट दर्ज हो गया। नतीजा ${dev(GATE)} वोट पूरे होने पर दिखेगा — अपने वार्ड के ग्रुप में भेजें।`
@@ -197,12 +218,12 @@ function paint() {
         const dalEl = $(".who .dal", best.r);
         $(".leader .meta").textContent = dalEl.textContent;
         $(".leader .meta").style.color = getComputedStyle(dalEl).color;
-        $(".leader .big").textContent = dev(Math.round((best.n / state.total) * 100)) + "%";
+        animateNum($(".leader .big"), Math.round((best.n / state.total) * 100), "%");
         $(".leader .big").style.color = getComputedStyle(best.r).color;
       }
     }
   }
-  $$("[data-total]").forEach(el => el.textContent = dev(state.total));
+  $$("[data-total]").forEach(el => animateNum(el, state.total));
 }
 
 async function refresh() {
@@ -241,7 +262,15 @@ const MSG = {
 async function vote(choice, row) {
   if (state.busy || state.phase !== "live") return;
   state.busy = true;
-  if (row) { row.classList.add("chosen", "flash"); setTimeout(() => row.classList.remove("flash"), 2800); }
+  haptic(14);
+
+  // तुरंत दिखाओ: लाल बत्ती जले, गिनती बढ़े — सर्वर का इंतज़ार न कराएँ
+  const before = { mine: state.mine, total: state.total, counts: { ...state.counts } };
+  state.mine = choice;
+  state.counts[choice] = (state.counts[choice] || 0) + 1;
+  state.total += 1;
+  if (row) { row.classList.add("chosen", "flash", "sending"); setTimeout(() => row.classList.remove("flash"), 2600); }
+  paint();
 
   let out;
   try {
@@ -261,21 +290,26 @@ async function vote(choice, row) {
     dbg("सर्वर: HTTP " + r.status + " → " + raw.slice(0, 160));
   } catch {
     state.busy = false;
-    if (row) row.classList.remove("chosen", "flash");
+    if (row) row.classList.remove("chosen", "flash", "sending");
+    Object.assign(state, before);                    // वापस पहले जैसा
+    paint();
     track("vote_blocked", { ward: WARD, reason: "network" });
     toast("नेटवर्क धीमा है। दोबारा कोशिश करें।");
     return;
   }
   state.busy = false;
+  if (row) row.classList.remove("sending");
 
   if (out.ok) {
     state.mine = choice;
-    paint();
+    haptic([12, 60, 22]);
     track("vote_cast", { ward: WARD, choice, dal: row ? row.dataset.dal : undefined });
     toast("आपका वोट दर्ज हो गया ✓");
   } else {
+    Object.assign(state, before);                    // आशावादी बदलाव वापस
     if (out.code === "already") state.mine = out.choice || null;
     else if (row) row.classList.remove("chosen", "flash");
+    paint();
     track("vote_blocked", { ward: WARD, reason: out.code || "unknown" });
     toast(MSG[out.code] || "वोट दर्ज नहीं हो सका।");
   }
