@@ -347,7 +347,7 @@ async function boot() {
   $$(".row").forEach(r => r.addEventListener("click", () => {
     if (r.dataset.locked || state.phase !== "live") {
       if (state.mine) toast("इस वार्ड में आपका वोट पहले ही दर्ज है।");
-      else if (state.phase === "frozen") toast("मतदान बंद है। नतीजे 9 सितम्बर शाम 6 बजे।");
+      else if (state.phase === "frozen") toast("मतदान बंद है। नतीजे 11 सितम्बर शाम 6 बजे।");
       else if (state.phase === "result") toast("मतदान समाप्त हो चुका है।");
       return;
     }

@@ -45,3 +45,25 @@ input[type=file]{padding:9px}
   background:#fff;padding:10px 12px;margin:0 0 8px}
 .cfg-row b{flex:0 0 92px;font-family:"Martel",Georgia,serif;font-size:15px}
 .cfg-row select{margin-top:0;flex:1}
+
+body.admin h3{font-family:"Martel",Georgia,serif;font-size:16px;margin:18px 0 8px}
+.kpi{display:flex;gap:8px;margin:0 0 4px}
+.kpi div{flex:1;border:1.5px solid var(--rule);background:#fff;padding:11px 10px;text-align:center}
+.kpi b{display:block;font-family:"Martel",Georgia,serif;font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi span{display:block;font-size:11.5px;color:var(--ink-soft);margin-top:3px}
+
+.adh-row{display:flex;align-items:center;gap:8px;margin:0 0 5px;font-size:13.5px}
+.adh-row span{flex:0 0 70px}
+.adh-row i{flex:1;height:16px;display:block;min-width:2px;transition:width .4s}
+.adh-row b{flex:0 0 48px;text-align:right;font-variant-numeric:tabular-nums}
+
+.spark{display:flex;align-items:flex-end;gap:2px;height:70px;border-bottom:1.5px solid var(--rule);padding:0 1px}
+.spark i{flex:1;background:var(--evm);display:block;min-height:3px}
+
+.wt{width:100%;border-collapse:collapse;font-size:13.5px}
+.wt th{text-align:right;font-size:11.5px;color:var(--ink-soft);border-bottom:1.5px solid var(--rule);padding:5px 6px}
+.wt td{border-bottom:1px solid var(--rule-soft);padding:7px 6px;vertical-align:top}
+.wt .w{font-family:"Martel",Georgia,serif;font-weight:700;width:38px;text-align:center}
+.wt .t{width:52px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.wt .p{display:block;font-size:11.5px;color:var(--ink-soft)}
+.wt tr.low .w{background:#FBE9E9;color:#9E1B1B}

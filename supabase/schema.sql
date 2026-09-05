@@ -18,16 +18,17 @@ drop function if exists public.phase();
 drop table    if exists public.votes cascade;
 
 -- ── समय की सीमाएँ (UTC में; IST = UTC + 5:30) ───────────────────
---  मतदान बंद : 07-09-2026 शाम 6:00 IST = 2026-09-07 12:30 UTC
---  नतीजे खुलें: 09-09-2026 शाम 6:00 IST = 2026-09-09 12:30 UTC
+--  मतदान (असली)  : 11-09-2026, सुबह 7 – शाम 6  (पोकरण दूसरे चरण में है)
+--  मतदान बंद   : 09-09-2026 शाम 6:00 IST = 2026-09-09 12:30 UTC
+--  नतीजे खुलें : 11-09-2026 शाम 6:00 IST = 2026-09-11 12:30 UTC
 --  धारा 126 लोक प्रतिनिधित्व अधिनियम की 48-घंटे मौन अवधि।
 create table if not exists public.config (
   key text primary key,
   value timestamptz not null
 );
 insert into public.config(key, value) values
-  ('freeze_at', '2026-09-07T12:30:00Z'),
-  ('reveal_at', '2026-09-09T12:30:00Z')
+  ('freeze_at', '2026-09-09T12:30:00Z'),
+  ('reveal_at', '2026-09-11T12:30:00Z')
 on conflict (key) do nothing;
 
 -- ── मत ──────────────────────────────────────────────────────────

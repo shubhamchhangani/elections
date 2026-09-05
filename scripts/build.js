@@ -71,12 +71,12 @@ ${schema}
 <header class="masthead">
   <div class="wrap">
     <b><a href="/">पोकरण नगर पालिका<br>चुनाव 2026</a></b>
-    <small>जनता की राय<i>शुभम छांगाणी</i></small>
+    <small>जनता की राय<i>शुभम छंगाणी</i></small>
   </div>
 </header>
 
-<div class="status live hide" data-phase="live"><span class="dot"></span> मतदान चालू · 7 सितम्बर शाम 6 बजे तक</div>
-<div class="status frozen hide" data-phase="frozen">मतदान बंद · नतीजे 9 सितम्बर शाम 6 बजे</div>
+<div class="status live hide" data-phase="live"><span class="dot"></span> मतदान चालू · 9 सितम्बर शाम 6 बजे तक</div>
+<div class="status frozen hide" data-phase="frozen">मतदान बंद · नतीजे 11 सितम्बर शाम 6 बजे</div>
 <div class="status result hide" data-phase="result">अंतिम नतीजे · मतदान समाप्त</div>
 
 ${pitch}
@@ -100,8 +100,8 @@ ${body}
     <p>अपनी दुकान या व्यवसाय का विज्ञापन यहाँ लगवाएँ — बैनर, वीडियो या स्लाइडर।
        <a href="https://wa.me/${WA}?text=${encodeURIComponent("पोकरण चुनाव वेबसाइट पर विज्ञापन के बारे में जानकारी चाहिए")}">WhatsApp पर संपर्क करें</a></p>
     <p><a href="/">सभी वार्ड</a> · <a href="/adhyaksh">अध्यक्ष</a> · <a href="/adhyaksh-kaise-chunte-hain">अध्यक्ष कैसे चुना जाता है?</a> · <a href="/gopniyata-niti">गोपनीयता नीति</a></p>
-    <p style="font-size:12.5px">मतदान 09 सितम्बर 2026 · मतगणना 14 सितम्बर 2026</p>
-    <p class="by">यह वेबसाइट बनाई है — <b>शुभम छांगाणी</b><br>
+    <p style="font-size:12.5px">मतदान 11 सितम्बर 2026 · मतगणना 14 सितम्बर 2026</p>
+    <p class="by">यह वेबसाइट बनाई है — <b>शुभम छंगाणी</b><br>
       <a href="https://wa.me/${WA}">WhatsApp पर संपर्क करें</a></p>
   </div>
 </footer>
@@ -209,7 +209,7 @@ const P = D.parties;
   <div class="sec">
     <h2>चुनाव की तारीख़ें</h2>
     <ul>
-      <li><b>09 सितम्बर 2026</b> — मतदान, सुबह 7 से शाम 6 बजे तक</li>
+      <li><b>11 सितम्बर 2026</b> — मतदान, सुबह 7 से शाम 6 बजे तक</li>
       <li><b>14 सितम्बर 2026</b> — मतगणना</li>
       <li><b>21 सितम्बर 2026</b> — अध्यक्ष का चुनाव (जीते हुए पार्षदों द्वारा)</li>
     </ul>
@@ -258,7 +258,7 @@ for (const w of D.wards) {
     <h1>वार्ड ${dev(w.ward)}</h1>
     <p class="kshetra">${esc(w.kshetra)}</p>
     <p class="sub" data-phase="live">अपने प्रत्याशी पर टैप करें। कोई लॉगिन नहीं — बस एक टैप।</p>
-    <p class="sub hide" data-phase="frozen">मतदान बंद है। नतीजे 9 सितम्बर शाम 6 बजे खुलेंगे।</p>
+    <p class="sub hide" data-phase="frozen">मतदान बंद है। नतीजे 11 सितम्बर शाम 6 बजे खुलेंगे।</p>
     <p class="sub hide" data-phase="result">यह जनता की राय का अंतिम नतीजा है।</p>
   </div>
 
@@ -321,7 +321,7 @@ for (const w of D.wards) {
     <h1>अध्यक्ष किस पार्टी का बनेगा?</h1>
     <p class="kshetra">25 वार्डों में जिस दल के सबसे ज़्यादा पार्षद जीतेंगे, अध्यक्ष उसी दल का बनेगा।</p>
     <p class="sub" data-phase="live">अपनी राय पर टैप करें। कोई लॉगिन नहीं — बस एक टैप।</p>
-    <p class="sub hide" data-phase="frozen">मतदान बंद है। नतीजे 9 सितम्बर शाम 6 बजे खुलेंगे।</p>
+    <p class="sub hide" data-phase="frozen">मतदान बंद है। नतीजे 11 सितम्बर शाम 6 बजे खुलेंगे।</p>
     <p class="sub hide" data-phase="result">यह जनता की राय का अंतिम नतीजा है।</p>
   </div>
 
@@ -333,7 +333,7 @@ for (const w of D.wards) {
   ${adSlot("mid")}
 
   <div class="note">
-    <b>ध्यान दें:</b> अध्यक्ष का चुनाव जनता सीधे नहीं करती। 09 सितम्बर को आप सिर्फ़ अपना वार्ड पार्षद चुनते हैं।
+    <b>ध्यान दें:</b> अध्यक्ष का चुनाव जनता सीधे नहीं करती। 11 सितम्बर को आप सिर्फ़ अपना वार्ड पार्षद चुनते हैं।
     अध्यक्ष को <b>21 सितम्बर</b> को जीते हुए पार्षद मिलकर चुनते हैं।
     <a href="/adhyaksh-kaise-chunte-hain">पूरी जानकारी पढ़ें</a>
   </div>
@@ -364,12 +364,12 @@ write("adhyaksh-kaise-chunte-hain.html", page({
   </div>
 
   <div class="note warn"><b>सबसे ज़रूरी बात:</b> अध्यक्ष को जनता सीधे वोट देकर नहीं चुनती।
-    09 सितम्बर को आप सिर्फ़ अपने वार्ड का पार्षद चुनते हैं।</div>
+    11 सितम्बर को आप सिर्फ़ अपने वार्ड का पार्षद चुनते हैं।</div>
 
   <div class="sec">
     <h2>पूरी प्रक्रिया</h2>
     <ul>
-      <li><b>09 सितम्बर 2026</b> — जनता 25 वार्डों के पार्षद चुनती है (सुबह 7 से शाम 6)</li>
+      <li><b>11 सितम्बर 2026</b> — जनता 25 वार्डों के पार्षद चुनती है (सुबह 7 से शाम 6)</li>
       <li><b>14 सितम्बर 2026</b> — मतगणना, पता चलता है कौन-कौन पार्षद बने</li>
       <li><b>21 सितम्बर 2026</b> — जीते हुए पार्षद बैठक में अध्यक्ष चुनते हैं (सुबह 10 से दोपहर 2 बजे), गिनती उसी दिन</li>
       <li><b>22 सितम्बर 2026</b> — उपाध्यक्ष का चुनाव</li>
@@ -407,6 +407,11 @@ write("admin.html", `<!doctype html>
 <link rel="stylesheet" href="/admin.css">
 </head>
 <body class="admin">
+<script>window.WARDS = ${JSON.stringify(D.wards.map(w => ({
+  n: w.ward,
+  p: w.pratyashi.map(x => ({ n: String(x.n), naam: x.naam, dal: x.dal }))
+})))};
+window.PARTIES = ${JSON.stringify(Object.fromEntries(Object.entries(D.parties).map(([k,v]) => [k, v.chhota])))};</script>
 <header class="masthead"><div class="wrap">
   <b>बैनर प्रबंधन</b><small id="who"></small>
 </div></header>
@@ -424,6 +429,12 @@ write("admin.html", `<!doctype html>
   </section>
 
   <section id="panel" hidden>
+    <div class="row-head">
+      <h2>आँकड़े</h2>
+      <button id="reload" class="link">ताज़ा करें</button>
+    </div>
+    <div id="stats"><p class="empty">आ रहे हैं…</p></div>
+
     <div class="row-head">
       <h2>चालू बैनर</h2>
       <button id="logout" class="link">लॉगआउट</button>

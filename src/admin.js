@@ -25,7 +25,7 @@ function say(msg, bad) {
 function applySession(session) {
   $("#login").hidden = !!session;
   $("#panel").hidden = !session;
-  if (session) { $("#who").textContent = session.user.email; load(); loadCfg(); }
+  if (session) { $("#who").textContent = session.user.email; loadStats(); load(); loadCfg(); }
 }
 
 $("#loginForm").addEventListener("submit", async e => {
@@ -71,6 +71,73 @@ async function load() {
     error ? say(error.message, true) : (say("हट गया"), load());
   }));
 }
+
+/* ── आँकड़े ───────────────────────────────────────────────── */
+const DAL_RANG = { bjp: "#F26722", inc: "#1F8FD6", ind: "#78716C" };
+const nf = n => Number(n || 0).toLocaleString("en-IN");
+
+async function loadStats() {
+  const box = $("#stats");
+  const { data: d, error } = await sb.rpc("admin_stats");
+  if (error) { box.innerHTML = `<p class="empty">आँकड़े नहीं आए: ${esc(error.message)}<br><small>supabase/stats.sql चलाना बाक़ी है?</small></p>`; return; }
+
+  const W = window.WARDS || [], P = window.PARTIES || {};
+  const byWard = Object.fromEntries((d.wards || []).map(w => [w.ward, w]));
+
+  const adh = d.adhyaksh || {};
+  const adhTotal = Object.values(adh).reduce((a, b) => a + b, 0) || 1;
+
+  const maxH = Math.max(1, ...(d.hourly || []).map(h => h.c));
+  const hrs = (d.hourly || []).slice(-24);
+
+  const rows = W.map(w => {
+    const st = byWard[w.n];
+    const total = st ? st.total : 0;
+    const counts = st ? st.counts : {};
+    const best = w.p.map(c => ({ ...c, v: counts[c.n] || 0 })).sort((a, b) => b.v - a.v);
+    const lead = best[0], second = best[1];
+    const pct = total ? Math.round((lead.v / total) * 100) : 0;
+    const marg = total && second ? Math.round(((lead.v - second.v) / total) * 100) : 0;
+    return `<tr class="${total < 8 ? "low" : ""}">
+      <td class="w">${w.n}</td>
+      <td class="t">${nf(total)}</td>
+      <td>${total ? `<b style="color:${DAL_RANG[lead.dal]}">${esc(lead.naam)}</b>
+            <span class="p">${esc(P[lead.dal] || "")} · ${pct}%${second ? ` · +${marg}` : ""}</span>` : "—"}</td>
+    </tr>`;
+  }).join("");
+
+  box.innerHTML = `
+    <div class="kpi">
+      <div><b>${nf(d.grand)}</b><span>कुल वोट</span></div>
+      <div><b>${nf(d.last_hour)}</b><span>पिछले 1 घंटे में</span></div>
+      <div><b>${nf(d.devices)}</b><span>अलग-अलग फ़ोन</span></div>
+    </div>
+
+    <h3>अध्यक्ष किसका</h3>
+    <div class="adh">
+      ${["bjp","inc","ind"].map(k => `
+        <div class="adh-row">
+          <span>${esc(P[k] || k)}</span>
+          <i style="width:${Math.round(((adh[k]||0)/adhTotal)*100)}%;background:${DAL_RANG[k]}"></i>
+          <b>${nf(adh[k]||0)}</b>
+        </div>`).join("")}
+    </div>
+
+    <h3>हर घंटे (भारतीय समय)</h3>
+    <div class="spark">
+      ${hrs.map(h => `<i style="height:${Math.max(3, Math.round((h.c/maxH)*100))}%" title="${esc(h.h)} — ${h.c} वोट"></i>`).join("")}
+    </div>
+    <p class="dims">${hrs.length ? esc(hrs[0].h) + "  →  " + esc(hrs[hrs.length-1].h) : ""}</p>
+
+    <h3>वार्डवार</h3>
+    <table class="wt">
+      <thead><tr><th>वार्ड</th><th>वोट</th><th>आगे कौन</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <p class="dims">लाल रंग वाले वार्ड में 8 से कम वोट हैं — वहाँ लिंक और भेजें।</p>`;
+}
+
+$("#reload").addEventListener("click", () => { loadStats(); load(); loadCfg(); });
 
 /* ── कहाँ क्या दिखे ────────────────────────────────────────── */
 const MODES = {
