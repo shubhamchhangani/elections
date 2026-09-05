@@ -4,7 +4,7 @@ import { SUPABASE_URL, SUPABASE_ANON } from "./config.js";
    विज्ञापन — 3 जगहें: top · mid · bottom
 
    नियम: प्रायोजक (दुकान) का बैनर किसी भी जगह लग सकता है।
-         Adsterra के banner तीनों जगहों पर भर सकते हैं।
+         बाक़ी जगहें /admin से चिपकाए गए नेटवर्क कोड से भरती हैं।
 
   top पर भी वही सुरक्षित banner format इस्तेमाल होता है; popunder या social bar नहीं।
    ═══════════════════════════════════════════════════════════════ */
@@ -24,7 +24,7 @@ const SPONSORS = [
   // { slot:"bottom", img:"/img/sponsors/dukan2.png", href:"https://wa.me/91XXXXXXXXXX", alt:"दूसरी दुकान" },
 ];
 
-/* ── 2. Adsterra — ख़ाली जगहें भरने के लिए ──
+/* ── 2. विज्ञापन नेटवर्क — ख़ाली जगहें भरने के लिए ──
   डैशबोर्ड में एक banner ad unit बनाएँ और उसकी key यहाँ डालें।
    खाली छोड़ेंगे तो वह जगह बिलकुल नहीं दिखेगी (कोई ख़ाली डिब्बा नहीं)। */
 /* अब हर जगह का नियंत्रण /admin से है (ad_config टेबल)।
@@ -64,7 +64,7 @@ function fillSponsor(box, list) {
   setInterval(() => { i = (i + 1) % list.length; box.innerHTML = sponsorHtml(list[i]); }, 8000);
 }
 
-/* अपना विज्ञापन — जब Adsterra बंद हो या key न हो, तो जगह ख़ाली न रहे,
+/* अपना न्यौता — जब कोई विज्ञापन न हो तो जगह ख़ाली न रहे,
    बल्कि वहीं से दुकानदार को न्यौता चला जाए */
 const HOUSE_WA = "919079269147";
 let _grand = 0;
