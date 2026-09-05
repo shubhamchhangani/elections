@@ -105,7 +105,7 @@ ${body}
 </footer>
 
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
-<script src="/ads.js" defer></script>
+<script type="module" src="/ads.js"></script>
 <script type="module" src="/app.js"></script>${ga}
 </body>
 </html>`;
@@ -390,6 +390,85 @@ write("adhyaksh-kaise-chunte-hain.html", page({
   ${adSlot("bottom")}`
 }));
 
+/* /admin — सिर्फ़ आपके लिए। robots से बाहर, sitemap से बाहर। */
+write("admin.html", `<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>बैनर प्रबंधन — पोकरण चुनाव 2026</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martel:wght@700;800&family=Mukta:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/admin.css">
+</head>
+<body class="admin">
+<header class="masthead"><div class="wrap">
+  <b>बैनर प्रबंधन</b><small id="who"></small>
+</div></header>
+
+<div class="wrap">
+  <p id="msg" class="msg" hidden></p>
+
+  <section id="login" hidden>
+    <h2>लॉगिन</h2>
+    <form id="loginForm">
+      <label>ईमेल<input id="email" type="email" autocomplete="username" required></label>
+      <label>पासवर्ड<input id="pass" type="password" autocomplete="current-password" required></label>
+      <button class="btn" id="loginBtn" type="submit">लॉगिन करें</button>
+    </form>
+  </section>
+
+  <section id="panel" hidden>
+    <div class="row-head">
+      <h2>चालू बैनर</h2>
+      <button id="logout" class="link">लॉगआउट</button>
+    </div>
+    <div id="list"></div>
+
+    <h2>नया बैनर लगाएँ</h2>
+    <div class="spec">
+      <b>तस्वीर का नाप</b>
+      <ul>
+        <li>चौड़ाई <b>1200–1600 px</b></li>
+        <li>अनुपात <b>3:1 से 4:1</b> — जैसे <b>1600 × 500</b> या <b>1500 × 400</b></li>
+        <li>वज़न <b>250KB से कम</b> — <a href="https://squoosh.app" target="_blank" rel="noopener">squoosh.app</a> पर दबा लें</li>
+        <li>PNG या JPG</li>
+      </ul>
+      <span>जितनी चौड़ी तस्वीर, उतनी कम ऊँचाई घेरेगी। 2:1 से ऊँची तस्वीर फ़ोन पर आधी स्क्रीन खा जाती है।</span>
+    </div>
+
+    <form id="addForm">
+      <label>तस्वीर<input id="file" type="file" accept="image/png,image/jpeg,image/webp" required></label>
+      <div id="preview"></div>
+      <p id="dims" class="dims"></p>
+
+      <label>जगह
+        <select id="slot" required>
+          <option value="bottom">सबसे नीचे — सबसे सस्ता</option>
+          <option value="mid">बीच में — मध्यम</option>
+          <option value="top">सबसे ऊपर — सबसे महँगा</option>
+        </select>
+      </label>
+      <label>टैप करने पर कहाँ जाए
+        <input id="href" type="text" required placeholder="tel:+917014913182  या  https://wa.me/917014913182">
+      </label>
+      <label>दुकान का नाम<input id="alt" type="text" required placeholder="पंकज फैंसी स्टोर, पोकरण"></label>
+      <label>अपने लिए नोट (किसी को नहीं दिखता)
+        <input id="note" type="text" placeholder="₹800 · 5 से 15 सितम्बर">
+      </label>
+      <label>क्रम (एक ही जगह पर कई हों तो)<input id="sort" type="number" value="0"></label>
+      <button class="btn" id="addBtn" type="submit">बैनर लगाएँ</button>
+    </form>
+  </section>
+</div>
+
+<script type="module" src="/admin.js"></script>
+</body>
+</html>`);
+
 /* गोपनीयता नीति — Turnstile के invisible mode की शर्त, और
    विज्ञापन नेटवर्क के अनुमोदन के लिए भी ज़रूरी */
 write("gopniyata-niti.html", page({
@@ -479,6 +558,8 @@ cpSync(join(ROOT, "src/styles.css"), join(OUT, "styles.css"));
 cpSync(join(ROOT, "src/app.js"),    join(OUT, "app.js"));
 cpSync(join(ROOT, "src/config.js"), join(OUT, "config.js"));
 cpSync(join(ROOT, "src/ads.js"),    join(OUT, "ads.js"));
+cpSync(join(ROOT, "src/admin.js"),  join(OUT, "admin.js"));
+cpSync(join(ROOT, "src/admin.css"), join(OUT, "admin.css"));
 if (existsSync(join(ROOT, "public"))) cpSync(join(ROOT, "public"), OUT, { recursive: true });
 
 /* Cloudflare Pages खुद ही /ward-14 पर ward-14.html देता है।
@@ -502,7 +583,7 @@ writeFileSync(join(OUT, "sitemap.xml"),
 ${urls.map(u => `  <url><loc>${SITE}${u}</loc><changefreq>hourly</changefreq><priority>${u==="/"?"1.0":"0.8"}</priority></url>`).join("\n")}
 </urlset>`);
 
-writeFileSync(join(OUT, "robots.txt"), `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`);
+writeFileSync(join(OUT, "robots.txt"), `User-agent: *\nAllow: /\nDisallow: /admin\n\nSitemap: ${SITE}/sitemap.xml\n`);
 
 writeFileSync(join(OUT, "favicon.svg"),
 `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#000"/><rect x="10" y="14" width="44" height="36" fill="#FBFAF7"/><rect x="10" y="14" width="10" height="36" fill="#12457E"/><rect x="26" y="22" width="22" height="4" fill="#1C1814"/><rect x="26" y="31" width="22" height="4" fill="#1C1814"/><rect x="26" y="40" width="14" height="4" fill="#1C1814"/></svg>`);
