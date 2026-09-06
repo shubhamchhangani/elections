@@ -15,6 +15,6 @@ export const GSC_VERIFY = "";
 export const GA_ID = "G-917WVFYSRS";
 
 export const SITE    = "https://pokaranchunav.pages.dev";
-export const WA      = "919079269147";
+export const WA      = "";   // ⚠️ जान-बूझकर ख़ाली — साइट से मालिक की संपर्क जानकारी हटाई गई
 export const GATE    = 20;
 export const POLL_MS = 15000;

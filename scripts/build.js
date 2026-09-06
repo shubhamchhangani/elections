@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SITE, WA, GA_ID, GSC_VERIFY } from "../src/config.js";
+import { SITE, GA_ID, GSC_VERIFY } from "../src/config.js";
 import { symbolSvg } from "../src/symbols.js";   // एक ही जगह से — दोबारा कभी बेमेल न हो
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -22,23 +22,8 @@ gtag('config','${GA_ID}',{anonymize_ip:true});
 </script>` : "";
 
 
-const pitch = `
-<div class="pitch">
-  <div class="wrap">
-    <div class="pitch-t">
-      <b>अपने व्यवसाय का विज्ञापन यहाँ लगवाएँ</b>
-      <span class="pitch-proof hide">अब तक <b data-grand>0</b> लोग वोट दे चुके हैं</span>
-      <span class="pitch-sub">दुकान · कोचिंग · शोरूम · होटल — पोकरण के लोगों तक सीधे पहुँचें</span>
-    </div>
-    <div class="pitch-b">
-      <a class="pitch-wa" href="https://wa.me/${WA}?text=${encodeURIComponent("पोकरण चुनाव वेबसाइट पर विज्ञापन के बारे में जानकारी चाहिए")}" rel="noopener" target="_blank">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.5 14.1c-.2.7-1.3 1.3-1.9 1.4-.5.1-1.1.1-1.8-.1-.4-.1-1-.3-1.7-.6-3-1.3-4.9-4.3-5.1-4.5-.1-.2-1.2-1.5-1.2-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.3.5-.3.3c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.2.4-.2.6-.1l2 .9c.2.1.4.2.4.3.1.2.1.7-.1 1.3Z"/></svg>
-        WhatsApp करें
-      </a>
-      <a class="pitch-tel" href="tel:+${WA}">${WA.replace(/^91/, "")}</a>
-    </div>
-  </div>
-</div>`;
+/* ⚠️ पहले यहाँ मालिक का WhatsApp/फ़ोन दिखाने वाली "विज्ञापन यहाँ लगवाएँ"
+   पट्टी थी — साइट से मालिक की संपर्क जानकारी हटाने के लिए पूरी तरह हटाई गई। */
 
 const page = ({ title, desc, path, og, body, ward = null, schema = "" }) => `<!doctype html>
 <html lang="hi">
@@ -79,8 +64,6 @@ ${schema}
 <div class="status frozen hide" data-phase="frozen">मतदान बंद · नतीजे 11 सितम्बर शाम 6 बजे</div>
 <div class="status result hide" data-phase="result">अंतिम नतीजे · मतदान समाप्त</div>
 
-${pitch}
-
 <main class="wrap">
 ${body}
 </main>
@@ -96,13 +79,10 @@ ${body}
       दर्ज होती है, और स्वचालित मतदान (बॉट) रोकने के लिए जाँच लगी है। फिर भी यह एक खुला
       जनमत सर्वेक्षण है — गुप्त मतदान नहीं।
     </div>
-    <p><b>इस वेबसाइट पर किसी प्रत्याशी या राजनीतिक दल का विज्ञापन शुल्क के माध्यम से होगा</b></p>
-    <p>अपनी दुकान या व्यवसाय का विज्ञापन यहाँ लगवाएँ — बैनर, वीडियो या स्लाइडर।
-       <a href="https://wa.me/${WA}?text=${encodeURIComponent("पोकरण चुनाव वेबसाइट पर विज्ञापन के बारे में जानकारी चाहिए")}">WhatsApp पर संपर्क करें</a></p>
+    <p><b>इस वेबसाइट पर किसी प्रत्याशी या राजनीतिक दल का विज्ञापन नहीं लिया जाता।</b></p>
     <p><a href="/">सभी वार्ड</a> · <a href="/adhyaksh">अध्यक्ष</a> · <a href="/adhyaksh-kaise-chunte-hain">अध्यक्ष कैसे चुना जाता है?</a> · <a href="/gopniyata-niti">गोपनीयता नीति</a></p>
     <p style="font-size:12.5px">मतदान 11 सितम्बर 2026 · मतगणना 14 सितम्बर 2026</p>
-    <p class="by">यह वेबसाइट बनाई है — <b>शुभम छंगाणी</b><br>
-      <a href="https://wa.me/${WA}">WhatsApp पर संपर्क करें</a></p>
+    <p class="by">यह वेबसाइट बनाई है — <b>शुभम छंगाणी</b></p>
   </div>
 </footer>
 
@@ -584,8 +564,6 @@ write("gopniyata-niti.html", page({
     <p>यह एक निजी वेबसाइट है। इसका भारत निर्वाचन आयोग, राजस्थान राज्य निर्वाचन आयोग,
     नगर पालिका पोकरण या किसी राजनीतिक दल से कोई सम्बन्ध नहीं है।
     यहाँ दिखने वाले आँकड़े असली चुनाव परिणाम नहीं हैं।</p>
-    <p>कोई सवाल या शिकायत हो तो
-    <a href="https://wa.me/${WA}" rel="noopener" target="_blank">WhatsApp पर संपर्क करें</a>।</p>
   </div>
 
   <a class="btn" href="/">अपना वार्ड चुनें</a>`

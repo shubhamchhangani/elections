@@ -5,7 +5,6 @@ import { SUPABASE_URL, SUPABASE_ANON } from "./config.js";
     सब /admin से control होते हैं (sponsors टेबल + sponsor_settings)   */
 
 const H = { apikey: SUPABASE_ANON, authorization: "Bearer " + SUPABASE_ANON };
-const HOUSE_WA = "919079269147";
 
 async function loadSponsors() {
   try {
@@ -54,15 +53,9 @@ function fillSponsor(box, list) {
   }, 8000);
 }
 
-function fillHouse(box) {
-  box.classList.add("has-house");
-  box.innerHTML = `<a class="house"
-    href="https://wa.me/${HOUSE_WA}?text=${encodeURIComponent("पोकरण चुनाव वेबसाइट पर विज्ञापन के बारे में जानकारी चाहिए")}"
-    rel="noopener" target="_blank">
-    <b>अपनी दुकान का बैनर यहाँ लगवाएं</b>
-    <span>WhatsApp पर संपर्क करें →</span>
-  </a>`;
-}
+/* ⚠️ पहले यहाँ "अपनी दुकान का बैनर यहाँ लगवाएं" वाला न्यौता था, जिसमें
+   मालिक का WhatsApp नंबर था — साइट से संपर्क जानकारी हटाने के लिए पूरी
+   तरह हटाया। अब जिस जगह कोई प्रायोजक नहीं, वह जगह बस ख़ाली/ग़ायब रहती है। */
 
 function addStickClose(box) {
   document.body.classList.add("has-stick");
@@ -89,9 +82,8 @@ function addStickClose(box) {
     if (list && list.length) {
       fillSponsor(box, list);
       if (slot === "stick") addStickClose(box);
-    } else if (slot !== "stick") {
-      fillHouse(box);   // चिपकी पट्टी ख़ाली हो तो कुछ नहीं — वरना पूरी स्क्रीन घेर लेती
     }
+    // कोई प्रायोजक नहीं → जगह ख़ाली रहती है (.ad का डिफ़ॉल्ट display:none)
   });
 
   /* ── तलहटी के नीचे — जितने भी बैनर, सब यहीं ──
@@ -107,13 +99,7 @@ function addStickClose(box) {
   let footList = bySlot["footer"] || [];
   if (footerShuffle && footList.length > 1) footList = shuffle(footList);
 
-  if (!footList.length) {
-    const box = document.createElement("div");
-    box.className = "ad"; box.dataset.ad = "footer";
-    foot.appendChild(box);
-    fillHouse(box);
-    return;
-  }
+  if (!footList.length) return;   // कोई प्रायोजक नहीं → कुछ नहीं दिखता
 
   for (const s of footList) {
     const box = document.createElement("div");
