@@ -71,7 +71,7 @@ create or replace function public.cast_vote(
   p_ward smallint, p_choice text, p_token uuid, p_device text, p_ip text
 ) returns json
 language plpgsql security definer set search_path = public as $$
-declare v_dev int; v_ipc int;
+declare v_dev int; v_ipc int; v_ipchoice int;
 begin
   if public.phase() <> 'live' then
     return json_build_object('ok', false, 'code', 'closed');
@@ -89,12 +89,24 @@ begin
     return json_build_object('ok', false, 'code', 'device_limit');
   end if;
 
-  -- परत 4: बहुत ढीली IP सीमा। पोकरण में Jio/Airtel के CGNAT की वजह से
-  -- सैकड़ों लोग एक ही IP साझा करते हैं — कड़ी सीमा असली मतदाताओं को रोक देती है।
-  -- बॉट Turnstile पहले ही रोक देता है, इसलिए यह सिर्फ़ बाढ़ रोकने का ब्रेक है।
+  -- परत 4: बहुत ढीली IP सीमा (पूरे वार्ड के लिए)। पोकरण में Jio/Airtel के
+  -- CGNAT की वजह से सैकड़ों लोग एक ही IP साझा करते हैं — कड़ी सीमा असली
+  -- मतदाताओं को रोक देती है। बॉट Turnstile पहले ही रोक देता है, इसलिए
+  -- यह सिर्फ़ बाढ़ रोकने का ब्रेक है।
   select count(*) into v_ipc from public.votes
    where ward = p_ward and ip_hash = p_ip and created_at > now() - interval '1 hour';
   if v_ipc >= 400 then
+    return json_build_object('ok', false, 'code', 'rate');
+  end if;
+
+  -- परत 5: एक ही IP से एक ही प्रत्याशी को बार-बार वोट — यही असली छेद था।
+  -- वार्ड 12 में एक IP ने 98 वोट सिर्फ़ एक प्रत्याशी को दिए, हर बार नया
+  -- device_hash बनाकर (fingerprint बदलने वाला ब्राउज़र) — पर वार्ड-स्तर की
+  -- 400 वाली सीमा के अंदर ही रहा, इसलिए पकड़ में नहीं आया। एक साझा नेटवर्क
+  -- से कई असली वोट आ सकते हैं, पर सब एक ही व्यक्ति को — इतने ज़्यादा नहीं।
+  select count(*) into v_ipchoice from public.votes
+   where ward = p_ward and choice = p_choice and ip_hash = p_ip;
+  if v_ipchoice >= 5 then
     return json_build_object('ok', false, 'code', 'rate');
   end if;
 

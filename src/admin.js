@@ -233,9 +233,19 @@ async function loadTraffic() {
 /* ── धांधली की जाँच — सिर्फ़ admin के लिए ─────────────────────
    हर वार्ड में वोट कितने, अलग-अलग फ़ोन कितने, अलग-अलग IP कितने।
    अगर वोट बहुत हों पर IP बहुत कम, तो वह एक ही जगह से आ रहे हैं — शक की बात। */
+function candidateName(ward, choice) {
+  if (ward === 0) return window.PARTIES?.[choice] || choice;
+  const w = (window.WARDS || []).find(x => x.n === ward);
+  const c = w?.p.find(x => x.n === choice);
+  return c ? `${c.naam} (${window.PARTIES?.[c.dal] || c.dal})` : choice;
+}
+
 async function loadFraud() {
   const box = $("#fraud");
-  const { data: d, error } = await sb.rpc("admin_fraud_stats");
+  const [{ data: d, error }, { data: cf, error: cfErr }] = await Promise.all([
+    sb.rpc("admin_fraud_stats"),
+    sb.rpc("admin_candidate_fraud"),
+  ]);
   if (error) { box.innerHTML = `<p class="empty">नहीं आया: ${esc(error.message)}<br><small>supabase/fixes2.sql चलाना बाक़ी है?</small></p>`; return; }
 
   const rows = (d.wards || []).filter(w => w.ward > 0).map(w => {
@@ -246,8 +256,26 @@ async function loadFraud() {
   }).sort((a, b) => b.perIp - a.perIp);
 
   const anyShaky = rows.some(r => r.shaky);
+  const flags = cfErr ? null : (cf?.flags || []);
 
   box.innerHTML = `
+    <h3>प्रत्याशी-स्तर के झंडे — अपने आप जाँच</h3>
+    ${cfErr ? `<p class="empty">नहीं आया: ${esc(cfErr.message)}<br><small>supabase/forensics.sql चलाना बाक़ी है?</small></p>` : (
+      flags.length ? `
+      <p class="warnbox">⚠️ नीचे के प्रत्याशियों को बहुत कम अलग-अलग IP से बहुत सारे वोट मिले हैं —
+        जैसा वार्ड 12 में मनमोहन के साथ मिला था। जाँच के लिए Supabase में:
+        <code>select * from admin_ip_breakdown(&lt;वार्ड&gt;, '&lt;choice&gt;');</code></p>
+      <table class="wt">
+        <thead><tr><th>वार्ड</th><th>प्रत्याशी</th><th>वोट</th><th>IP</th><th>वोट/IP</th></tr></thead>
+        <tbody>${flags.map(f => `<tr class="low">
+          <td class="w"><a href="/ward-${f.ward}" target="_blank">${f.ward === 0 ? "अध्यक्ष" : f.ward}</a></td>
+          <td>${esc(candidateName(f.ward, f.choice))}</td>
+          <td class="t">${nf(f.total)}</td><td class="t">${nf(f.ips)}</td><td class="t">${f.ratio}</td>
+        </tr>`).join("")}</tbody>
+      </table>` : `<p class="dims">✓ अभी कोई प्रत्याशी सन्दिग्ध नहीं — सभी का वोट/IP अनुपात सामान्य है।</p>`
+    )}
+
+    <h3>वार्ड-स्तर पर</h3>
     ${anyShaky ? `<p class="warnbox">⚠️ नीचे लाल रंग वाले वार्डों में वोट-प्रति-IP या वोट-प्रति-फ़ोन का अनुपात
       असामान्य है — यानी बहुत कम अलग जगहों से बहुत सारे वोट आए हैं। Supabase में
       <code>select * from shak;</code> चलाकर device देखें और शक होने पर मिटाएँ:
