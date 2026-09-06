@@ -379,7 +379,13 @@ async function loadWardSummary() {
   if (!box) return;
   const map = window.WARD_DAL || {};
   const { data, error } = await sb.rpc("ward_party_summary");
-  if (error || !data) return;
+  if (error || !data) {
+    if (!loadWardSummary._shown) {
+      loadWardSummary._shown = true;
+      box.innerHTML = `<p class="sub">अभी उपलब्ध नहीं — थोड़ी देर बाद फिर देखें।</p>`;
+    }
+    return;
+  }
 
   if (data.phase === "frozen") {
     box.innerHTML = `<p class="sub">मौन अवधि में यह जानकारी उपलब्ध नहीं है। नतीजे 11 सितम्बर शाम 6 बजे खुलेंगे।</p>`;
