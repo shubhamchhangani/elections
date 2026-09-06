@@ -15,7 +15,7 @@ begin
     return json_build_object('phase', v_phase, 'wards', null);
   end if;
   select coalesce(json_agg(t order by t.ward), '[]'::json) into v_wards from (
-    select ward, count(*)::int total, json_object_agg(choice, c) counts
+    select ward, sum(c)::int total, json_object_agg(choice, c) counts
       from (select ward, choice, count(*)::int c
               from public.votes where ward > 0 group by 1,2) x
      group by ward
