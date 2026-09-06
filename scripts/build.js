@@ -109,7 +109,7 @@ ${body}
 <div class="wrap"><div id="footads" class="footads"></div></div>
 
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
-<div class="stick" data-ad="stick"></div>
+<div class="ad ad-stick" data-ad="stick"></div>
 <script type="module" src="/ads.js"></script>
 <script type="module" src="/app.js"></script>${ga}
 </body>
@@ -310,6 +310,10 @@ for (const w of D.wards) {
       <span class="pct hide"><b>—</b><small></small></span>
     </button>`).join("\n");
 
+  /* वार्ड → प्रत्याशी-क्रमांक → दल — ताकि 25 वार्डों की बढ़त निकाली जा सके */
+  const wardDal = Object.fromEntries(D.wards.map(w =>
+    [w.ward, Object.fromEntries(w.pratyashi.map(p => [String(p.n), p.dal]))]));
+
   write("adhyaksh.html", page({
     ward: 0,
     title: "पोकरण नगर पालिका अध्यक्ष 2026 — किस पार्टी का बोर्ड बनेगा? | जनता की राय",
@@ -319,6 +323,8 @@ for (const w of D.wards) {
           desc: "भाजपा, कांग्रेस या निर्दलीय — आपकी क्या राय है? एक टैप में वोट दें।",
           img: "/og/adhyaksh.png" },
     body: `
+  <script>window.WARD_DAL = ${JSON.stringify(wardDal)};</script>
+
   ${adSlot("top")}
 
   <div class="head">
@@ -335,6 +341,13 @@ for (const w of D.wards) {
 
   ${adSlot("after")}
   ${shareBtns}
+
+  <div class="sec">
+    <h2>अभी 25 वार्डों में से किसकी बढ़त</h2>
+    <p>हर वार्ड में जिस प्रत्याशी को सबसे ज़्यादा वोट मिल रहे हैं, उसी की पार्टी को उस वार्ड की बढ़त मिलती है — ठीक वैसे ही जैसे असली नतीजे में बोर्ड बनता है।</p>
+    <div id="wardSummary"><p class="sub">आ रहा है…</p></div>
+  </div>
+
   ${adSlot("mid")}
 
   <div class="note">
@@ -443,17 +456,18 @@ window.PARTIES = ${JSON.stringify(Object.fromEntries(Object.entries(D.parties).m
     <h2>कितने लोग आए</h2>
     <div id="traffic"><p class="empty">आ रहे हैं…</p></div>
 
+    <h2>धांधली की जाँच</h2>
+    <div id="fraud"><p class="empty">आ रहे हैं…</p></div>
+
     <div class="row-head">
       <h2>चालू बैनर</h2>
       <button id="logout" class="link">लॉगआउट</button>
     </div>
+    <p class="hint">जिस जगह दुकान का बैनर <b>चालू</b> हो, वहाँ हमेशा वही दिखेगा।
+      कोई बैनर न हो तो "अपनी दुकान का बैनर यहाँ लगवाएं" वाला न्यौता दिखता है।
+      <b>तलहटी के नीचे</b> जितने चाहें उतने बैनर जोड़ सकते हैं — हर एक अलग दिखेगा।
+      नाम, नंबर या नोट बदलने के लिए उस पर सीधे क्लिक करें।</p>
     <div id="list"></div>
-
-    <h2>कहाँ क्या दिखे</h2>
-    <p class="hint">जिस जगह दुकान का बैनर लगा है, वहाँ हमेशा वही दिखेगा।
-      नीचे यह तय करें कि <b>जब उस जगह कोई बैनर न हो</b> तब क्या दिखे।</p>
-    <div id="cfg"></div>
-    <button id="allOff" class="btn ghost">तीनों जगह से सारे विज्ञापन हटा दें</button>
 
     <h2>नया बैनर लगाएँ</h2>
     <div class="spec">
@@ -474,10 +488,12 @@ window.PARTIES = ${JSON.stringify(Object.fromEntries(Object.entries(D.parties).m
 
       <label>जगह
         <select id="slot" required>
+          <option value="top">सबसे ऊपर</option>
           <option value="after">मतपत्र के ठीक बाद</option>
-          <option value="mid">बीच में</option>
+          <option value="mid" selected>बीच में</option>
           <option value="bottom">सबसे नीचे</option>
-          <option value="footer">तलहटी के नीचे (footer)</option>
+          <option value="stick">नीचे चिपकी पट्टी</option>
+          <option value="footer">तलहटी के नीचे (कितने भी जोड़ सकते हैं)</option>
         </select>
       </label>
       <label>टैप करने पर कहाँ जाए

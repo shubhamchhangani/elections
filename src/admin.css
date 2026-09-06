@@ -72,26 +72,21 @@ body.admin h3{font-family:"Martel",Georgia,serif;font-size:16px;margin:18px 0 8p
 .tw td:first-child{text-align:right}
 .adh-row span.wide{flex:0 0 148px;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-.cfg-box{border:1.5px solid var(--rule);background:#fff;margin:0 0 9px;padding:10px 12px}
-.cfg-box .cfg-row{border:0;background:none;padding:0;margin:0}
-.cfg-box details{margin-top:8px;border-top:1px solid var(--rule-soft);padding-top:8px}
-.cfg-box summary{font-size:12.5px;color:var(--ink-soft);cursor:pointer;font-weight:600}
-.cfg-box textarea{
-  display:block;width:100%;margin:8px 0;padding:9px 10px;
-  border:1.5px solid var(--rule);font:12px/1.5 ui-monospace,Menlo,monospace;
-  resize:vertical;
+/* बैनर सूची — जगह के हिसाब से समूह */
+.slot-group{margin:0 0 18px}
+.slot-group h4{
+  font-family:"Martel",Georgia,serif;font-size:14.5px;margin:0 0 7px;
+  display:flex;align-items:baseline;justify-content:space-between;gap:8px;
 }
-.cfg-box .btn{margin:0;min-height:40px;font-size:14px}
+.slot-group .cnt{font-family:"Mukta",sans-serif;font-size:11.5px;font-weight:600;color:var(--ink-soft)}
 
-.hgt{font-size:12.5px;margin:0 0 10px}
-.hgt input{width:110px;display:inline-block;margin:4px 0 0}
-.hgt small{display:block;color:var(--ink-soft);font-size:11.5px;margin-top:2px}
+.editable{cursor:pointer;border-bottom:1px dashed transparent}
+.editable:hover{border-bottom-color:var(--evm-dark)}
+.editable.muted{color:var(--ink-soft);font-style:italic;font-size:12px}
+.editable input{box-sizing:border-box}
 
-.cfg-row em.live{
-  font-style:normal;font-size:11.5px;font-weight:700;padding:3px 8px;
-  border:1px solid;white-space:nowrap;flex:0 0 auto;
+.warnbox{
+  border:1.5px solid #9E1B1B;background:#FBF1F1;color:#7A1414;
+  padding:10px 12px;font-size:13px;line-height:1.6;margin:0 0 12px;
 }
-.cfg-row em.live.ok{color:#17612B;border-color:#17612B;background:#E8F3E8}
-.cfg-row em.live.off{color:var(--ink-soft);border-color:var(--rule-soft);background:#F5F3EE}
-.cfg-row em.live.warn{color:#8A5A00;border-color:#8A5A00;background:#FFF3D6}
-.cfg-row select{flex:1 1 120px}
+.warnbox code{background:#fff;padding:1px 4px;border:1px solid #E5C7C7;font-size:11.5px}

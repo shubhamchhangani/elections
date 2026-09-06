@@ -45,6 +45,15 @@ function fillHouse(box) {
   </a>`;
 }
 
+function addStickClose(box) {
+  document.body.classList.add("has-stick");
+  const x = document.createElement("button");
+  x.className = "close"; x.type = "button"; x.textContent = "×";
+  x.setAttribute("aria-label", "बंद करें");
+  x.onclick = () => { box.remove(); document.body.classList.remove("has-stick"); };
+  box.appendChild(x);
+}
+
 (async () => {
   const sponsors = await loadSponsors();
 
@@ -52,14 +61,18 @@ function fillHouse(box) {
   const bySlot = {};
   for (const s of sponsors) (bySlot[s.slot] = bySlot[s.slot] || []).push(s);
 
-  /* ── regular slots (mid, bottom, after) ── */
+  /* ── regular slots (top, after, mid, bottom, stick) ── */
   document.querySelectorAll("[data-ad]").forEach(box => {
     const slot = box.dataset.ad;
-    if (slot === "footer" || slot === "stick") return;
+    if (slot === "footer") return;   // footer अलग से, नीचे
 
     const list = bySlot[slot];
-    if (list && list.length) return fillSponsor(box, list);
-    fillHouse(box);   /* कोई दुकान नहीं → न्यौता */
+    if (list && list.length) {
+      fillSponsor(box, list);
+      if (slot === "stick") addStickClose(box);
+    } else if (slot !== "stick") {
+      fillHouse(box);   // चिपकी पट्टी ख़ाली हो तो कुछ नहीं — वरना पूरी स्क्रीन घेर लेती
+    }
   });
 
   /* ── footer — lazy load ── */

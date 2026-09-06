@@ -6,12 +6,14 @@ const $  = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 
 const SLOTS = {
+  top:    "सबसे ऊपर",
   after:  "मतपत्र के ठीक बाद",
   mid:    "बीच में",
   bottom: "सबसे नीचे",
-  footer: "तलहटी के नीचे (एक से ज़्यादा)",
+  stick:  "नीचे चिपकी पट्टी",
+  footer: "तलहटी के नीचे (कितने भी)",
 };
-const ORDER = ["after","mid","bottom","footer"];
+const ORDER = ["top","after","mid","bottom","stick","footer"];
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
 
 function say(msg, bad) {
@@ -31,7 +33,7 @@ function say(msg, bad) {
 function applySession(session) {
   $("#login").hidden = !!session;
   $("#panel").hidden = !session;
-  if (session) { $("#who").textContent = session.user.email; loadStats(); loadTraffic(); load(); }
+  if (session) { $("#who").textContent = session.user.email; loadStats(); loadTraffic(); loadFraud(); load(); }
 }
 
 $("#loginForm").addEventListener("submit", async e => {
@@ -46,25 +48,38 @@ $("#loginForm").addEventListener("submit", async e => {
 
 $("#logout").addEventListener("click", async () => { await sb.auth.signOut(); });
 
-/* ── सूची ──────────────────────────────────────────────────── */
+/* ── सूची — जगह के हिसाब से समूह में, ताकि साफ़ दिखे कहाँ कितने बैनर हैं ── */
 async function load() {
   const { data, error } = await sb.from("sponsors").select("*").order("slot").order("sort");
   if (error) return say("सूची नहीं आई: " + error.message, true);
   const list = $("#list");
   if (!data.length) { list.innerHTML = `<p class="empty">अभी कोई बैनर नहीं है। नीचे से जोड़ें।</p>`; return; }
-  list.innerHTML = data.map(s => `
-    <div class="card${s.active ? "" : " off"}">
-      <img src="${esc(s.img)}" alt="" loading="lazy" decoding="async">
-      <div class="meta">
-        <b>${esc(s.alt) || "(नाम नहीं)"}</b>
-        <span>${SLOTS[s.slot]} · ${esc(s.href)}</span>
-        ${s.note ? `<span class="note">${esc(s.note)}</span>` : ""}
-      </div>
-      <div class="acts">
-        <button data-toggle="${s.id}" data-on="${s.active}">${s.active ? "बंद करें" : "चालू करें"}</button>
-        <button data-del="${s.id}" class="danger">हटाएँ</button>
-      </div>
-    </div>`).join("");
+
+  const bySlot = {};
+  for (const s of data) (bySlot[s.slot] = bySlot[s.slot] || []).push(s);
+
+  list.innerHTML = ORDER.filter(slot => bySlot[slot]?.length).map(slot => {
+    const items = bySlot[slot];
+    const activeN = items.filter(s => s.active).length;
+    return `
+    <div class="slot-group">
+      <h4>${SLOTS[slot]} <span class="cnt">${activeN} चालू / ${items.length} कुल</span></h4>
+      ${items.map(s => `
+        <div class="card${s.active ? "" : " off"}" data-card="${s.id}">
+          <img src="${esc(s.img)}" alt="" loading="lazy" decoding="async">
+          <div class="meta">
+            <b class="editable" data-field="alt" data-id="${s.id}">${esc(s.alt) || "(नाम नहीं)"}</b>
+            <span class="editable" data-field="href" data-id="${s.id}">${esc(s.href)}</span>
+            ${s.note ? `<span class="note editable" data-field="note" data-id="${s.id}">${esc(s.note)}</span>`
+                     : `<span class="note editable muted" data-field="note" data-id="${s.id}">+ अपने लिए नोट जोड़ें</span>`}
+          </div>
+          <div class="acts">
+            <button data-toggle="${s.id}" data-on="${s.active}">${s.active ? "बंद करें" : "चालू करें"}</button>
+            <button data-del="${s.id}" class="danger">हटाएँ</button>
+          </div>
+        </div>`).join("")}
+    </div>`;
+  }).join("");
 
   $$("[data-toggle]").forEach(b => b.addEventListener("click", async () => {
     const { error } = await sb.from("sponsors")
@@ -75,6 +90,26 @@ async function load() {
     if (!confirm("यह बैनर हमेशा के लिए हट जाएगा। पक्का?")) return;
     const { error } = await sb.from("sponsors").delete().eq("id", b.dataset.del);
     error ? say(error.message, true) : (say("हट गया"), load());
+  }));
+
+  /* नाम, लिंक, नोट — बिना दोबारा तस्वीर चढ़ाए, यहीं क्लिक करके बदलें */
+  $$(".editable").forEach(el => el.addEventListener("click", () => {
+    if (el.querySelector("input")) return;
+    const field = el.dataset.field, id = el.dataset.id;
+    const old = field === "note" && el.classList.contains("muted") ? "" : el.textContent.trim();
+    const input = document.createElement("input");
+    input.type = "text"; input.value = old;
+    input.style.cssText = "width:100%;font:inherit;padding:3px 5px;border:1.5px solid var(--evm)";
+    el.textContent = ""; el.appendChild(input); input.focus(); input.select();
+    const save = async () => {
+      const val = input.value.trim();
+      const patch = { [field]: val || null };
+      const { error } = await sb.from("sponsors").update(patch).eq("id", id);
+      error ? say(error.message, true) : say("बदल गया");
+      load();
+    };
+    input.addEventListener("keydown", e => { if (e.key === "Enter") save(); if (e.key === "Escape") load(); });
+    input.addEventListener("blur", save);
   }));
 }
 
@@ -195,89 +230,38 @@ async function loadTraffic() {
       <b>${nf(p.hits)}</b></div>`).join("") || '<p class="empty">अभी कुछ नहीं</p>'}`;
 }
 
-/* ── कहाँ क्या दिखे ────────────────────────────────────────── */
-const MODES = {
-  adsterra: "विज्ञापन दिखाएँ",
-  house:    "अपना न्यौता — 'विज्ञापन यहाँ लगवाएँ'",
-  off:      "कुछ नहीं — जगह ग़ायब"
-};
+/* ── धांधली की जाँच — सिर्फ़ admin के लिए ─────────────────────
+   हर वार्ड में वोट कितने, अलग-अलग फ़ोन कितने, अलग-अलग IP कितने।
+   अगर वोट बहुत हों पर IP बहुत कम, तो वह एक ही जगह से आ रहे हैं — शक की बात। */
+async function loadFraud() {
+  const box = $("#fraud");
+  const { data: d, error } = await sb.rpc("admin_fraud_stats");
+  if (error) { box.innerHTML = `<p class="empty">नहीं आया: ${esc(error.message)}<br><small>supabase/fixes2.sql चलाना बाक़ी है?</small></p>`; return; }
 
-/* इस जगह पर असल में क्या चल रहा है */
-function chalRahaHai(r, hasSponsor) {
-  if (hasSponsor) return ["दुकान का बैनर", "ok"];
-  if (r.fallback === "off")   return ["कुछ नहीं", "off"];
-  if (r.fallback === "house") return ["अपना न्यौता", "ok"];
-  if (r.code) {
-    const c = r.code;
-    const net = /acscdn|aclib|adcash/i.test(c) ? "Adcash"
-              : /highrevenueformat|highperformanceformat|adsterra/i.test(c) ? "Adsterra"
-              : /googlesyndication|adsbygoogle/i.test(c) ? "Google AdSense"
-              : "आपका कोड";
-    return [net, "ok"];
-  }
-  return ["पुरानी Adsterra (कोड में लिखी)", "warn"];
+  const rows = (d.wards || []).filter(w => w.ward > 0).map(w => {
+    const perIp = w.ips ? (w.total / w.ips) : w.total;
+    const perDev = w.devices ? (w.total / w.devices) : w.total;
+    const shaky = w.total >= 15 && (perIp >= 8 || perDev >= 3);
+    return { ...w, perIp, perDev, shaky };
+  }).sort((a, b) => b.perIp - a.perIp);
+
+  const anyShaky = rows.some(r => r.shaky);
+
+  box.innerHTML = `
+    ${anyShaky ? `<p class="warnbox">⚠️ नीचे लाल रंग वाले वार्डों में वोट-प्रति-IP या वोट-प्रति-फ़ोन का अनुपात
+      असामान्य है — यानी बहुत कम अलग जगहों से बहुत सारे वोट आए हैं। Supabase में
+      <code>select * from shak;</code> चलाकर device देखें और शक होने पर मिटाएँ:
+      <code>delete from votes where ward=&lt;N&gt; and device_hash='&lt;hash&gt;';</code></p>` : ""}
+    <table class="wt">
+      <thead><tr><th>वार्ड</th><th>वोट</th><th>फ़ोन</th><th>IP</th><th>वोट/IP</th></tr></thead>
+      <tbody>${rows.map(r => `<tr class="${r.shaky ? "low" : ""}">
+        <td class="w">${r.ward}</td><td class="t">${nf(r.total)}</td>
+        <td class="t">${nf(r.devices)}</td><td class="t">${nf(r.ips)}</td>
+        <td class="t">${r.perIp.toFixed(1)}</td>
+      </tr>`).join("")}</tbody>
+    </table>
+    <p class="dims">सामान्य वार्ड में वोट/IP आमतौर पर 1–4 के बीच रहता है (परिवार/मोहल्ले के साझा नेटवर्क की वजह से थोड़ा ऊपर भी जा सकता है)। बहुत ऊपर का मतलब एक ही जगह से बाढ़।</p>`;
 }
-
-async function loadCfg() {
-  const { data, error } = await sb.from("ad_config").select("slot,fallback,code,height,count");
-  const box = $("#cfg");
-  if (error) { box.innerHTML = `<p class="empty">नियंत्रण नहीं आया: ${esc(error.message)}</p>`; return; }
-  const by = Object.fromEntries(data.map(r => [r.slot, r]));
-  const { data: sp } = await sb.from("sponsors").select("slot").eq("active", true);
-  const spSlots = new Set((sp || []).map(x => x.slot));
-  box.innerHTML = ORDER.map(slot => {
-    const r = by[slot] || {};
-    return `
-    <div class="cfg-box">
-      <div class="cfg-row">
-        <b>${SLOTS[slot]}</b>
-        <em class="live ${chalRahaHai(r, spSlots.has(slot))[1]}">${chalRahaHai(r, spSlots.has(slot))[0]}</em>
-        <select data-cfg="${slot}">
-          ${Object.entries(MODES).map(([v, t]) =>
-            `<option value="${v}"${r.fallback === v ? " selected" : ""}>${t}</option>`).join("")}
-        </select>
-      </div>
-      ${slot === "global" ? '<p class="hint">यह टैग पूरे पन्ने पर एक बार चलता है और ख़ुद जगह ढूँढ़ लेता है। Adcash का AutoTag यहीं डालें।</p>' : ""}
-      <details${r.code ? " open" : ""}>
-        <summary>विज्ञापन का कोड ${r.code ? "· लगा हुआ है" : "· खाली"}</summary>
-        <textarea data-code="${slot}" rows="4"
-          placeholder="नेटवर्क से मिला पूरा &lt;script&gt; टैग यहाँ चिपकाएँ। खाली छोड़ेंगे तो पुराना Adsterra चलेगा।">${esc(r.code || "")}</textarea>
-        ${slot === "footer" ? `<label class="hgt">कितने विज्ञापन (1–20)
-          <input type="number" data-cnt="${slot}" value="${r.count || 1}" min="1" max="20">
-          <small>तलहटी के नीचे यही कोड इतनी बार दिखेगा। हर एक अलग iframe में।</small></label>` : ""}
-        <label class="hgt">ऊँचाई (px) — बड़े/वीडियो विज्ञापन के लिए 600 तक
-          <input type="number" data-hgt="${slot}" value="${r.height || 0}" min="0" max="900" step="10">
-          <small>0 = अपने आप (पट्टी 60, बड़ा 260)</small></label>
-        <button data-savecode="${slot}" class="btn ghost">यह कोड लगाएँ</button>
-      </details>
-    </div>`;
-  }).join("");
-
-  $$("[data-savecode]").forEach(b => b.addEventListener("click", async () => {
-    const slot = b.dataset.savecode;
-    const val = $(`[data-code="${slot}"]`).value.trim();
-    const h = Number($(`[data-hgt="${slot}"]`).value) || 0;
-    const cEl = $(`[data-cnt="${slot}"]`);
-    const patch = { code: val || null, height: h, updated: new Date().toISOString() };
-    if (cEl) patch.count = Math.max(1, Math.min(20, Number(cEl.value) || 1));
-    const { error } = await sb.from("ad_config").update(patch).eq("slot", slot);
-    error ? say(error.message, true) : (say(`${SLOTS[slot]} — कोड ${val ? "लग गया" : "हटा दिया"}, साइट पर तुरंत लागू`), loadCfg());
-  }));
-
-  $$("[data-cfg]").forEach(sel => sel.addEventListener("change", async () => {
-    const { error } = await sb.from("ad_config")
-      .update({ fallback: sel.value, updated: new Date().toISOString() })
-      .eq("slot", sel.dataset.cfg);
-    error ? say(error.message, true) : say(`${SLOTS[sel.dataset.cfg]} — बदल गया, साइट पर तुरंत लागू`);
-  }));
-}
-
-$("#allOff").addEventListener("click", async () => {
-  if (!confirm("तीनों जगह से सारे विज्ञापन हट जाएँगे (दुकानों के बैनर फिर भी दिखेंगे)। पक्का?")) return;
-  const { error } = await sb.from("ad_config").update({ fallback: "off" }).in("slot", ORDER);
-  if (error) return say(error.message, true);
-  say("सारे विज्ञापन बंद"); loadCfg();
-});
 
 /* ── नया बैनर ──────────────────────────────────────────────── */
 let _prevUrl = null;

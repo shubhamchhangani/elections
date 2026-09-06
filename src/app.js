@@ -368,6 +368,59 @@ sb.rpc("get_totals").then(({ data }) => {
   $$(".pitch-proof").forEach(el => el.classList.remove("hide"));
 }).catch(() => {});
 
+/* ── अध्यक्ष पेज पर: 25 वार्डों में से किस दल की बढ़त ──────────
+   हर वार्ड में जिस प्रत्याशी को सबसे ज़्यादा वोट, उसी की पार्टी को
+   उस वार्ड का "अंक" मिलता है — ठीक वैसे ही जैसे बोर्ड बनता है। */
+const DAL_NAAM = { bjp: "भाजपा", inc: "कांग्रेस", ind: "निर्दलीय" };
+const DAL_RANG = { bjp: "#F26722", inc: "#1F8FD6", ind: "#78716C" };
+
+async function loadWardSummary() {
+  const box = document.getElementById("wardSummary");
+  if (!box) return;
+  const map = window.WARD_DAL || {};
+  const { data, error } = await sb.rpc("ward_party_summary");
+  if (error || !data) return;
+
+  if (data.phase === "frozen") {
+    box.innerHTML = `<p class="sub">मौन अवधि में यह जानकारी उपलब्ध नहीं है। नतीजे 11 सितम्बर शाम 6 बजे खुलेंगे।</p>`;
+    return;
+  }
+
+  const lead = {};
+  for (const w of (data.wards || [])) {
+    if (w.total < GATE) { lead[w.ward] = null; continue; }
+    const dalMap = map[w.ward] || {};
+    let best = null, bestN = -1;
+    for (const [choice, n] of Object.entries(w.counts || {})) {
+      if (n > bestN) { bestN = n; best = dalMap[choice] || null; }
+    }
+    lead[w.ward] = best;
+  }
+
+  const counts = { bjp: 0, inc: 0, ind: 0 };
+  let none = 0;
+  for (let i = 1; i <= 25; i++) {
+    const d = lead[i];
+    if (d && counts[d] !== undefined) counts[d]++; else none++;
+  }
+
+  box.innerHTML = `
+    <div class="wsum">
+      ${["bjp","inc","ind"].map(k => `
+        <div class="wsum-c" style="border-color:${DAL_RANG[k]}">
+          <b style="color:${DAL_RANG[k]}">${dev(counts[k])}</b><span>${DAL_NAAM[k]} आगे</span>
+        </div>`).join("")}
+      ${none ? `<div class="wsum-c wsum-none"><b>${dev(none)}</b><span>अभी नतीजा नहीं</span></div>` : ""}
+    </div>
+    <div class="wsum-grid">
+      ${Array.from({ length: 25 }, (_, i) => i + 1).map(n => {
+        const d = lead[n];
+        const style = d ? `background:${DAL_RANG[d]}22;border-color:${DAL_RANG[d]};color:${DAL_RANG[d]}` : "";
+        return `<a href="/ward-${n}" class="wsum-cell" style="${style}">${dev(n)}</a>`;
+      }).join("")}
+    </div>`;
+}
+
 /* ── शुरुआत ─────────────────────────────────────────────────── */
 window.addEventListener("error", e => dbg("JS गड़बड़ी: " + e.message + " @ " + (e.filename||"").split("/").pop() + ":" + e.lineno));
 window.addEventListener("unhandledrejection", e => dbg("promise गड़बड़ी: " + (e.reason && e.reason.message || e.reason)));
@@ -392,6 +445,11 @@ async function boot() {
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") refresh();
   });
+
+  if (WARD === 0) {   // अध्यक्ष पेज — 25 वार्डों में से कौन आगे
+    loadWardSummary();
+    setInterval(() => { if (document.visibilityState === "visible") loadWardSummary(); }, POLL_MS);
+  }
 }
 
 // Turnstile का callback वैश्विक होना चाहिए

@@ -263,6 +263,28 @@ a{color:var(--evm)}
 .grid a:active small{color:#C9D8EA}
 .grid a:focus-visible{outline:3px solid var(--evm);outline-offset:2px}
 
+/* ── अध्यक्ष: 25 वार्डों में किसकी बढ़त ────────── */
+.wsum{display:flex;gap:7px;margin:0 0 12px;flex-wrap:wrap}
+.wsum-c{
+  flex:1 1 90px;text-align:center;border:1.5px solid;background:var(--paper-2);
+  padding:10px 6px;border-radius:2px;
+}
+.wsum-c b{display:block;font-family:"Martel",Georgia,serif;font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}
+.wsum-c span{display:block;font-size:11.5px;color:var(--ink-soft);margin-top:2px}
+.wsum-c.wsum-none{border-color:var(--rule-soft)}
+.wsum-c.wsum-none b{color:var(--ink-soft)}
+
+.wsum-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.wsum-grid a{
+  aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+  border:1.5px solid var(--rule-soft);background:var(--paper-2);
+  text-decoration:none;color:var(--ink);
+  font-family:"Martel",Georgia,serif;font-weight:700;font-size:16px;
+  transition:transform .12s;
+}
+.wsum-grid a:active{transform:scale(.9)}
+.wsum-grid a:focus-visible{outline:3px solid var(--evm);outline-offset:1px}
+
 /* ── बटन ─────────────────────────────────────── */
 .btn{
   display:flex;align-items:center;justify-content:center;gap:9px;
@@ -319,6 +341,21 @@ a{color:var(--evm)}
 /* footer area */
 .footads{margin:0 0 24px}
 .footads .ad{margin:10px 0}
+
+/* चिपकी पट्टी — स्क्रीन के नीचे स्थिर */
+.ad.ad-stick{position:relative}
+.ad.ad-stick.has-sponsor,.ad.ad-stick.has-house{
+  position:fixed;left:0;right:0;bottom:0;z-index:40;
+  margin:0;max-width:480px;margin-inline:auto;
+  border-width:1.5px 1.5px 0;box-shadow:0 -4px 14px rgba(0,0,0,.08);
+}
+.ad.ad-stick .close{
+  position:absolute;top:-11px;right:6px;width:22px;height:22px;
+  border:1px solid var(--rule);border-radius:50%;background:#fff;
+  font:700 13px/1 system-ui;color:var(--ink-soft);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;padding:0;
+}
+body.has-stick{padding-bottom:70px}
 
 
 
