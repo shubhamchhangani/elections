@@ -1,11 +1,10 @@
 import { SUPABASE_URL, SUPABASE_ANON } from "./config.js";
 
 /*  विज्ञापन — सिर्फ़ दुकानों के बैनर
-    slots: mid · bottom · footer
-    सब /admin से control होते हैं (sponsors टेबल)        */
+    slots: top · after · mid · bottom · stick · footer (कितने भी)
+    सब /admin से control होते हैं (sponsors टेबल + sponsor_settings)   */
 
 const H = { apikey: SUPABASE_ANON, authorization: "Bearer " + SUPABASE_ANON };
-
 const HOUSE_WA = "919079269147";
 
 async function loadSponsors() {
@@ -16,6 +15,26 @@ async function loadSponsors() {
     );
     return r.ok ? await r.json() : [];
   } catch { return []; }
+}
+
+async function loadFooterShuffle() {
+  try {
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/sponsor_settings?select=value&key=eq.footer_shuffle`,
+      { headers: H }
+    );
+    const d = r.ok ? await r.json() : [];
+    return !!d[0]?.value;
+  } catch { return false; }
+}
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
 }
 
 function sponsorHtml(s) {
@@ -55,13 +74,13 @@ function addStickClose(box) {
 }
 
 (async () => {
-  const sponsors = await loadSponsors();
+  const [sponsors, footerShuffle] = await Promise.all([loadSponsors(), loadFooterShuffle()]);
 
   /* slot → list */
   const bySlot = {};
   for (const s of sponsors) (bySlot[s.slot] = bySlot[s.slot] || []).push(s);
 
-  /* ── regular slots (top, after, mid, bottom, stick) ── */
+  /* ── नियमित जगहें (top, after, mid, bottom, stick) ── */
   document.querySelectorAll("[data-ad]").forEach(box => {
     const slot = box.dataset.ad;
     if (slot === "footer") return;   // footer अलग से, नीचे
@@ -75,13 +94,20 @@ function addStickClose(box) {
     }
   });
 
-  /* ── footer — lazy load ── */
+  /* ── तलहटी के नीचे — जितने भी बैनर, सब यहीं ──
+     ⚠️ पहले हर बैनर IntersectionObserver से "स्क्रॉल में आने पर भरो" वाला था,
+     पर .ad का डिफ़ॉल्ट CSS display:none है — यानी जब तक भरा न जाए तब तक
+     दिखता ही नहीं, और जब तक दिखता नहीं तब तक "स्क्रॉल में आया" नहीं गिना
+     जाता। यह डेडलॉक था — तलहटी का कोई भी बैनर कभी अपने आप नहीं दिखता था।
+     अब सीधे भरते हैं; असली lazy-loading <img loading="lazy"> से होती है,
+     जो पहले से ही हर बैनर की तस्वीर पर लगा है — पन्ना फिर भी धीमा नहीं होता। */
   const foot = document.getElementById("footads");
   if (!foot) return;
 
-  const footList = bySlot["footer"] || [];
+  let footList = bySlot["footer"] || [];
+  if (footerShuffle && footList.length > 1) footList = shuffle(footList);
+
   if (!footList.length) {
-    /* एक house ad */
     const box = document.createElement("div");
     box.className = "ad"; box.dataset.ad = "footer";
     foot.appendChild(box);
@@ -89,18 +115,10 @@ function addStickClose(box) {
     return;
   }
 
-  /* हर बैनर के लिए एक box */
   for (const s of footList) {
     const box = document.createElement("div");
     box.className = "ad ad-footer"; box.dataset.ad = "footer";
     foot.appendChild(box);
-
-    const io = new IntersectionObserver(es => {
-      if (!es[0].isIntersecting || box._done) return;
-      box._done = true;
-      fillSponsor(box, [s]);
-      io.unobserve(box);
-    }, { rootMargin: "300px" });
-    io.observe(box);
+    fillSponsor(box, [s]);
   }
 })();

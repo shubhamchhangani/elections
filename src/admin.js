@@ -33,8 +33,21 @@ function say(msg, bad) {
 function applySession(session) {
   $("#login").hidden = !!session;
   $("#panel").hidden = !session;
-  if (session) { $("#who").textContent = session.user.email; loadStats(); loadTraffic(); loadFraud(); load(); }
+  if (session) { $("#who").textContent = session.user.email; loadStats(); loadTraffic(); loadFraud(); load(); loadFooterShuffle(); }
 }
+
+/* ── तलहटी का क्रम: तय या बेतरतीब ─────────────────────────────── */
+async function loadFooterShuffle() {
+  const { data, error } = await sb.from("sponsor_settings").select("value").eq("key", "footer_shuffle").maybeSingle();
+  if (error) return;   // sponsor-settings.sql अभी नहीं चला — चुपचाप छोड़ दो
+  $("#footerShuffle").checked = !!data?.value;
+}
+$("#footerShuffle").addEventListener("change", async e => {
+  const { error } = await sb.from("sponsor_settings")
+    .update({ value: e.target.checked }).eq("key", "footer_shuffle");
+  if (error) { say(error.message, true); e.target.checked = !e.target.checked; return; }
+  say(e.target.checked ? "अब तलहटी के बैनर बेतरतीब क्रम में दिखेंगे" : "अब तय किया क्रम चलेगा");
+});
 
 $("#loginForm").addEventListener("submit", async e => {
   e.preventDefault();
@@ -74,12 +87,35 @@ async function load() {
                      : `<span class="note editable muted" data-field="note" data-id="${s.id}">+ अपने लिए नोट जोड़ें</span>`}
           </div>
           <div class="acts">
+            <div class="reorder">
+              <button data-up="${s.id}" data-slot="${slot}" title="ऊपर ले जाएँ">↑</button>
+              <button data-down="${s.id}" data-slot="${slot}" title="नीचे ले जाएँ">↓</button>
+            </div>
             <button data-toggle="${s.id}" data-on="${s.active}">${s.active ? "बंद करें" : "चालू करें"}</button>
             <button data-del="${s.id}" class="danger">हटाएँ</button>
           </div>
         </div>`).join("")}
     </div>`;
   }).join("");
+
+  $$("[data-up],[data-down]").forEach(b => b.addEventListener("click", async () => {
+    const slot = b.dataset.slot, id = Number(b.dataset.up || b.dataset.down);
+    const items = bySlot[slot].slice();   // पहले से sort के हिसाब से क्रम में
+    const i = items.findIndex(x => x.id === id);
+    const j = b.dataset.up ? i - 1 : i + 1;
+    if (j < 0 || j >= items.length) return;   // पहले से ऊपर/नीचे नहीं जा सकता
+    [items[i], items[j]] = [items[j], items[i]];
+    // ⚠️ ज़्यादातर बैनर का sort अभी 0 ही है (डिफ़ॉल्ट) — सिर्फ़ दो की अदला-बदली
+    // से कुछ नहीं बदलता अगर दोनों 0 हों। इसलिए पूरी सूची को 0,1,2... नए सिरे
+    // से नंबर देकर एक साथ सहेजते हैं, ताकि क्रम हमेशा पक्का बदले।
+    // (upsert नहीं — id, GENERATED ALWAYS identity है, Postgres उसमें सीधे
+    // value डालने से मना करता है; per-row update() ही सही तरीक़ा है)
+    const results = await Promise.all(
+      items.map((x, idx) => sb.from("sponsors").update({ sort: idx }).eq("id", x.id))
+    );
+    const err = results.find(r => r.error);
+    err ? say(err.error.message, true) : load();
+  }));
 
   $$("[data-toggle]").forEach(b => b.addEventListener("click", async () => {
     const { error } = await sb.from("sponsors")
