@@ -22,6 +22,7 @@ const sha = async (s: string) => {
    नहीं चाहिए। हर 12 घंटे में अपने आप ताज़ा होती है, function ज़िंदा रहते हुए। */
 let dcRanges: number[][] = [];      // हर एक: [नेटवर्क, mask]
 let dcAt = 0;
+let lastDcErrs: string[] = [];
 
 function ipToInt(ip: string): number | null {
   const m = ip.trim().match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
@@ -43,16 +44,25 @@ function cidrToRange(cidr: string): number[] | null {
 async function loadDcRanges(): Promise<number[][]> {
   const out: number[][] = [];
   const add = (cidr: string) => { const r = cidrToRange(cidr); if (r) out.push(r); };
-  try {
-    const [aws, gcp, oci] = await Promise.all([
-      fetch("https://ip-ranges.amazonaws.com/ip-ranges.json").then(r => r.json()).catch(() => null),
-      fetch("https://www.gstatic.com/ipranges/cloud.json").then(r => r.json()).catch(() => null),
-      fetch("https://docs.oracle.com/en-us/iaas/tools/public_ip_ranges.json").then(r => r.json()).catch(() => null),
-    ]);
-    for (const p of aws?.prefixes ?? []) if (p.ip_prefix) add(p.ip_prefix);
-    for (const p of gcp?.prefixes ?? []) if (p.ipv4Prefix) add(p.ipv4Prefix);
-    for (const region of oci?.regions ?? []) for (const c of region.cidrs ?? []) if (c.cidr) add(c.cidr);
-  } catch { /* नीचे fail-open है */ }
+  const withTimeout = (url: string, ms = 6000) => {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), ms);
+    return fetch(url, { signal: ctrl.signal }).then(r => r.json()).finally(() => clearTimeout(t));
+  };
+  const results = await Promise.allSettled([
+    withTimeout("https://ip-ranges.amazonaws.com/ip-ranges.json"),
+    withTimeout("https://www.gstatic.com/ipranges/cloud.json"),
+    withTimeout("https://docs.oracle.com/en-us/iaas/tools/public_ip_ranges.json"),
+  ]);
+  const errs: string[] = [];
+  const [awsR, gcpR, ociR] = results;
+  if (awsR.status === "fulfilled") { for (const p of awsR.value?.prefixes ?? []) if (p.ip_prefix) add(p.ip_prefix); }
+  else errs.push("aws:" + String(awsR.reason).slice(0, 80));
+  if (gcpR.status === "fulfilled") { for (const p of gcpR.value?.prefixes ?? []) if (p.ipv4Prefix) add(p.ipv4Prefix); }
+  else errs.push("gcp:" + String(gcpR.reason).slice(0, 80));
+  if (ociR.status === "fulfilled") { for (const region of ociR.value?.regions ?? []) for (const c of region.cidrs ?? []) if (c.cidr) add(c.cidr); }
+  else errs.push("oci:" + String(ociR.reason).slice(0, 80));
+  lastDcErrs = errs;
   return out;
 }
 
