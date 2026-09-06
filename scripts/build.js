@@ -579,7 +579,7 @@ write("404.html", page({
   body: `
   <div class="head">
     <h1>यह पेज नहीं मिला</h1>
-    <p class="kshetra">शायद लिंक अधूरा रह गया। नीचे से अपना वार्ड चुनें।</p>
+    <p class="kshetra"> लिंक अधूरा रह गया। नीचे से अपना वार्ड चुनें।</p>
   </div>
   <div class="grid">
     ${D.wards.map(x => `<a href="/ward-${x.ward}"><span>${dev(x.ward)}</span><small>वार्ड</small></a>`).join("\n    ")}
